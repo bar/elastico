@@ -109,11 +109,11 @@ class Config:
 		if development:
 			config = {
 				'verbose': 3,
-				'indexName': '{:s}_elements',
-				'indexType': 'element',
-				'dbName': '***REMOVED***_{:s}',
+				'esIndex': 'dmoz',
+				'esType': 'category',
+				'dbName': 'dmoz',
 				'dbConnections': [
-					('192.168.222.31', '***REMOVED***', '***REMOVED***'),
+					('127.0.0.1', 'elastico', 'elastico'),
 				],
 				'dbQueueSize': 4,
 				'threads': 16,
@@ -121,17 +121,17 @@ class Config:
 				'writeBuffer': 1000,
 				'limit': 2000,
 				'elasticConnections': [
-					('http', '127.0.0.1', '9200')
+					('http', '192.168.0.1', '9200')
 				],
 			}
 		else:
 			config = {
 				'verbose': 0,
-				'indexName': '{:s}_elements',
-				'indexType': 'element',
-				'dbName': '***REMOVED***_{:s}',
+				'esIndex': 'dmoz',
+				'esType': 'category',
+				'dbName': 'dmoz',
 				'dbConnections': [
-					('127.0.0.1', '***REMOVED***', '***REMOVED***'),
+					('127.0.0.1', 'elastico', 'elastico'),
 				],
 				'dbQueueSize': 4,
 				'threads': 16,
@@ -245,7 +245,7 @@ class Indexer(object):
 		self.buffer = query.values(Soup.elements.id)
 		vprint('Preparing the food...')
 
-	def consume(self, startTime, threadName, dbQueue, elasticServer, indexName, indexType, readBufferSize = 10, writeBufferSize = 1000):
+	def consume(self, startTime, threadName, dbQueue, elasticServer, esIndex, esType, readBufferSize = 10, writeBufferSize = 1000):
 		"""The consumer.
 
 		Retrieves elements data an its associated models, using 'elements' as datasource.
@@ -254,8 +254,8 @@ class Indexer(object):
 			threadName:
 			dbQueue:
 			elasticServer:
-			indexName: String with index name for its creation or just its usage.
-			indexType: String with inde type.
+			esIndex: String with index name for its creation or just its usage.
+			esType: String with inde type.
 			readBufferSize:
 			writeBufferSize: Integer with the number of docs to accumulate before inserting in elasticServer index.
 		"""
@@ -292,7 +292,7 @@ class Indexer(object):
 				dbQueue.put(Soup)
 
 				for Element in Elements:
-					elasticServer.index(Element[1], indexName, indexType, Element[0], bulk = True)
+					elasticServer.index(Element[1], esIndex, esType, Element[0], bulk = True)
 
 				count = self.count = self.count + len(ids)
 
@@ -500,8 +500,9 @@ if __name__ == '__main__':
 		dbQueue.put(dbSoup.build())
 		dbConnections.append(dbServer)
 
-	vprint('Index name: {:s}'.format(config.indexName))
-	vprint('Index type: {:s}'.format(config.indexType))
+	# vprint('Site: {:s}'.format(config.prefix))
+	vprint('Index: {:s}'.format(config.esIndex))
+	vprint('Type: {:s}'.format(config.esType))
 	vprint('Threads: {:d}'.format(config.threads))
 	vprint('DB Queue size: {:d}'.format(config.dbQueueSize))
 	vprint('Read buffer: {:d}'.format(config.readBuffer))
@@ -513,11 +514,11 @@ if __name__ == '__main__':
 	# retry_time = 10
 	# timeout = 10
 	elasticServer = ES(server = config.elasticConnections, bulk_size = config.writeBuffer)
-	elasticServer.indices.create_index_if_missing(config.indexName)
+	elasticServer.indices.create_index_if_missing(config.esIndex)
 
 	# Create new threads
 	for i in threadList:
-		thread = ThreadClass(Indexer.consume, (startTime, str(i+1), dbQueue, elasticServer, config.indexName, config.indexType, config.readBuffer, config.writeBuffer))
+		thread = ThreadClass(Indexer.consume, (startTime, str(i+1), dbQueue, elasticServer, config.esIndex, config.esType, config.readBuffer, config.writeBuffer))
 		threads.append(thread)
 
 	for t in threads:
