@@ -28,15 +28,15 @@ class Config:
 
 	def parseArgs(self):
 		parser = ArgumentParser(description = 'Index elements from MySQL databases to ElasticSearch servers.', fromfile_prefix_chars='@')
-		parser.add_argument('site', choices = sites, help = 'Define which site to index.')
+		# parser.add_argument('prefix', choices = prefixes, help = 'Elasticsearch index prefix.')
 		parser.add_argument('-v', '--verbose', action = 'count')
 		parser.add_argument('-d', '--development', action = 'store_true', help='Development environment.')
 		parser.add_argument('-c', '--db-connections', dest = 'dbConnections', type = file, help = 'File where the MySQL database connections are defined.')
 		parser.add_argument('-b', '--db-name', dest = 'dbName', help='MySQL database name.')
 		parser.add_argument('-q', '--db-queue-size', dest = 'dbQueueSize', type = int, choices = range(1, 9), help = 'MySQL databases queue size.')
 		parser.add_argument('-e', '--es-connections', dest = 'elasticConnections', type = file, help = 'File where the ElasticSearch server connections are defined.')
-		parser.add_argument('-n', '--es-index-name', dest = 'indexName', help='ElasticSearch index name.')
-		parser.add_argument('-y', '--es-index-type', dest = 'indexType', help='ElasticSearch Index type.')
+		parser.add_argument('-n', '--es-index', dest = 'esIndex', help='ElasticSearch index.')
+		parser.add_argument('-y', '--es-type', dest = 'esType', help='ElasticSearch type.')
 		parser.add_argument('-t', '--threads', type = int, choices = range(1, 17), help = 'Number of threads to deploy.')
 		parser.add_argument('-r', '--read-buffer', type = int, dest = 'readBuffer', help = 'Size if the buffer used to read from the MySQL databases.')
 		parser.add_argument('-w', '--write-buffer', type = int, dest = 'writeBuffer', help = 'Size of the buffer used to write to the ElasticSearch servers.')
@@ -48,9 +48,8 @@ class Config:
 	def set(self):
 		for k, v in self.load(args.development).items():
 			setattr(self, k, v)
-
-		# site
-		self.site = args.site
+		# prefix
+		# self.prefix = args.prefix
 
 		# verbose
 		if args.verbose is not None:
@@ -61,20 +60,20 @@ class Config:
 			self.readElasticConnections()
 
 		# elasticsearch index name
-		if args.indexName is not None:
-			self.indexName = args.indexName
-		else:
-			self.indexName = self.indexName.format(args.site)
+		if args.esIndex is not None:
+			self.esIndex = args.esIndex
+		# else:
+		# 	self.esIndex = self.esIndex.format(args.prefix)
 
 		# elasticsearch index type
-		if args.indexType is not None:
-			self.indexType = args.indexType
+		if args.esType is not None:
+			self.esType = args.esType
 
 		# database name
 		if args.dbName is not None:
 			self.dbName = args.dbName
-		else:
-			self.dbName = self.dbName.format(args.site)
+		# else:
+		# 	self.dbName = self.dbName.format(args.prefix)
 
 		# database connections
 		if args.dbConnections is not None:
@@ -501,7 +500,6 @@ if __name__ == '__main__':
 		dbQueue.put(dbSoup.build())
 		dbConnections.append(dbServer)
 
-	vprint('Site: {:s}'.format(config.site))
 	vprint('Index name: {:s}'.format(config.indexName))
 	vprint('Index type: {:s}'.format(config.indexType))
 	vprint('Threads: {:d}'.format(config.threads))
