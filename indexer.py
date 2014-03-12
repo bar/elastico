@@ -18,6 +18,7 @@ import time
 args = None
 
 
+
 class Config:
 	"""Configuration class."""
 
@@ -172,6 +173,7 @@ class Config:
 			if not arg.strip():
 				continue
 			yield arg
+
 
 class Soup(object):
 	"""Intended for ORM usage."""
@@ -477,6 +479,7 @@ def uniqify(collection):
 	seen = set()
 	seen_add = seen.add
 	return [ x for x in collection if x not in seen and not seen_add(x)]
+
 
 if __name__ == '__main__':
 	startTime = time.time()
