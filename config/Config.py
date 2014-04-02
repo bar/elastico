@@ -6,11 +6,10 @@
 __author__      = "Ber Clausen"
 __copyright__   = "Copyright 2014, Planet Earth"
 
-# from getopt import getopt
 # from argparse import FileType
 from argparse import ArgumentParser
 
-args = None
+VERBOSE = 0
 
 
 class Config:
@@ -20,12 +19,15 @@ class Config:
 	"""
 
 	def __init__(self):
-		global args
+		# global args
 		args = self.parse_args()
-		self.set()
+		self.set_verbose(args.verbose)
+		self.set_args(args)
 
 	def convert_arg_line_to_args(self, arg_line):
-		"""Fancy parting arguments lines from files
+		"""Fancy parsing.
+
+		Converts arguments lines from files.
 
 		Args:
 			arg_line (string): Argument line.
@@ -38,6 +40,7 @@ class Config:
 			yield arg
 
 	def parse_args(self):
+		"""Get arguments."""
 		parser = ArgumentParser(
 			description = 'Index elements from MySQL databases to ElasticSearch servers.',
 			fromfile_prefix_chars = '@')
@@ -87,7 +90,13 @@ class Config:
 		#parser.add_argument('-o', '--output', nargs='?', type = FileType('w'), default = stdout)
 		return parser.parse_args()
 
-	def set(self):
+	def set_verbose(self, verbose):
+		"""Export verbositi level."""
+		global VERBOSE
+		VERBOSE = verbose
+
+	def set_args(self, args):
+		"""Set arguments."""
 		for k, v in self.load(args.development).items():
 			setattr(self, k, v)
 		# prefix
@@ -121,11 +130,11 @@ class Config:
 		if args.db_connections is not None:
 			self.db_connections = self.readConnections('db', args.db_connections)
 		else:
-			for i, dbConnection in enumerate(self.db_connections):
-				self.db_connections[i] = list(dbConnection)
+			for i, db_connection in enumerate(self.db_connections):
+				self.db_connections[i] = list(db_connection)
 
-		for dbConnection in self.db_connections:
-			dbConnection.insert(0, self.db_name)
+		for db_connection in self.db_connections:
+			db_connection.insert(0, self.db_name)
 
 		# databases queue size
 		if args.db_queue_size is not None:

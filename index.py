@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from __future__ import print_function # http://stackoverflow.com/questions/5980042/how-to-implement-the-verbose-or-v-option-into-a-python-script
-
 """index.py: Index MySQL information inside Elasticsearch."""
 
 __author__      = "Ber Clausen"
@@ -12,6 +10,9 @@ __copyright__   = "Copyright 2014, Planet Earth"
 import time, sys
 from Queue import Queue
 from pyes import ES # Elasticsearch connector
+
+# Utility functions
+from utils.utils import vprint
 
 # # Indexer
 # from utils.ThreadWatcher import ThreadWatcher # Thread control
@@ -40,7 +41,6 @@ from indexer.Indexer import Indexer
 
 
 def main(script, *args, **kwargs):
-	# import ipdb; ipdb.set_trace()
 	startTime = time.time()
 
 	IndexerConfig = Config()
@@ -51,20 +51,18 @@ def main(script, *args, **kwargs):
 
 	db_connections = IndexerConfig.db_connections
 
-	# import ipdb; ipdb.set_trace()
 	for _ in range(IndexerConfig.db_queue_size):
 		db_connection = db_connections.pop(0)
 		IndexerSoup = Soup(db_connection)
 		DbQueue.put(IndexerSoup.build())
 		db_connections.append(db_connection)
 
-	# # vprint('Site: {:s}'.format(IndexerConfig.prefix))
-	# vprint('Index: {:s}'.format(IndexerConfig.es_index))
-	# vprint('Type: {:s}'.format(IndexerConfig.es_type))
-	# vprint('Threads: {:d}'.format(IndexerConfig.threads))
-	# vprint('DB Queue size: {:d}'.format(IndexerConfig.db_queue_size))
-	# vprint('Read buffer: {:d}'.format(IndexerConfig.read_buffer))
-	# vprint('Write buffer: {:d}'.format(IndexerConfig.write_buffer))
+	vprint('Index: {:s}'.format(IndexerConfig.es_index))
+	vprint('Type: {:s}'.format(IndexerConfig.es_type))
+	vprint('Threads: {:d}'.format(IndexerConfig.threads))
+	vprint('DB Queue size: {:d}'.format(IndexerConfig.db_queue_size))
+	vprint('Read buffer: {:d}'.format(IndexerConfig.read_buffer))
+	vprint('Write buffer: {:d}'.format(IndexerConfig.write_buffer))
 
 	# import ipdb; ipdb.set_trace()
 	EsIndexer = Indexer(Soup(db_connections.pop(0)).build(), IndexerConfig.limit)

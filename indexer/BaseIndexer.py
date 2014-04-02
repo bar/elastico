@@ -54,7 +54,7 @@ class BaseIndexer(object):
 		raise NotImplementedError()
 
 	@abstractmethod
-	def consume(self, startTime, threadName, dbQueue, esServer, esIndex, esType, readBufferSize = 10, writeBufferSize = 1000):
+	def consume(self, startTime, threadName, dbQueue, esServer, esIndex, esType, readBufferSize=10, writeBufferSize=1000):
 		"""Retrieves data from models an its associations.
 
 		Args:
