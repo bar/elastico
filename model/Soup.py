@@ -10,8 +10,8 @@ from abc import ABCMeta, abstractmethod
 
 from sqlalchemy import *
 #from sqlalchemy.exc import *
-from sqlalchemy.ext.declarative import declarative_base
 from sqlsoup import SQLSoup, scoped_session, sessionmaker
+from sqlalchemy.ext.declarative import declarative_base
 
 
 class Soup(object):
@@ -28,7 +28,7 @@ class Soup(object):
 		name, hostname, username, password = connection
 		self.url = '{:s}://{:s}:{:s}@{:s}/{:s}'.format(engine, username, password, hostname, name)
 
-	def build(self, db_charset = 'utf8'):
+	def build(self, db_charset='utf8'):
 		"""Construct the db object used to access the database.
 
 		Note: Using session with autocommit=True is better when working with threads, and avoids calling Soup.session.commit()

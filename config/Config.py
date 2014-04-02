@@ -147,7 +147,7 @@ class Config:
 		if args.limit is not None:
 			self.limit = args.limit
 
-	def load(self, development = False):
+	def load(self, development=False):
 		if development:
 			config = {
 				'verbose': 3,

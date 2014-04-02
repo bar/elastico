@@ -7,16 +7,16 @@ __author__      = "Ber Clausen"
 __copyright__   = "Copyright 2014, Planet Earth"
 
 from BaseIndexer import BaseIndexer
-
 from sqlalchemy import func
+
 
 class Indexer(BaseIndexer):
 	"""Indexer class"""
 
-	def __init__(self, Model, limit = None):
-		super(Indexer, self).__init__(Model, limit)
+	# def __init__(self, Model, limit = None):
+		# super(Indexer, self).__init__(Model, limit)
 
-	def produce(self, Model, limit = None):
+	def produce(self, Model, limit=None):
 		where = True
 
 		import ipdb; ipdb.set_trace()
@@ -34,7 +34,7 @@ class Indexer(BaseIndexer):
 
 		vprint('Preparing the food...')
 
-	def consume(self, startTime, threadName, dbQueue, esServer, esIndex, esType, readBufferSize = 10, writeBufferSize = 1000):
+	def consume(self, startTime, threadName, dbQueue, esServer, esIndex, esType, readBufferSize=10, writeBufferSize=1000):
 		# sync threads
 		tprint(threadName, 'Starting... ({:d} > {:d})'.format(readBufferSize, writeBufferSize))
 		time.sleep(0.5)
