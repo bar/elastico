@@ -43,41 +43,49 @@ def main(script, *args, **kwargs):
 	# import ipdb; ipdb.set_trace()
 	startTime = time.time()
 
-	config = Config()
+	IndexerConfig = Config()
 
-	threadList = range(config.threads)
+	threadList = range(IndexerConfig.threads)
 	threads = []
 	DbQueue = Queue()
 
-	dbConnections = config.dbConnections
+	db_connections = IndexerConfig.db_connections
 
 	# import ipdb; ipdb.set_trace()
-	for _ in range(config.dbQueueSize):
-		dbConnection = dbConnections.pop(0)
-		DbSoup = Soup(dbConnection)
-		DbQueue.put(DbSoup.build())
-		dbConnections.append(dbConnection)
+	for _ in range(IndexerConfig.db_queue_size):
+		db_connection = db_connections.pop(0)
+		IndexerSoup = Soup(db_connection)
+		DbQueue.put(IndexerSoup.build())
+		db_connections.append(db_connection)
 
-	# # vprint('Site: {:s}'.format(config.prefix))
-	# vprint('Index: {:s}'.format(config.esIndex))
-	# vprint('Type: {:s}'.format(config.esType))
-	# vprint('Threads: {:d}'.format(config.threads))
-	# vprint('DB Queue size: {:d}'.format(config.dbQueueSize))
-	# vprint('Read buffer: {:d}'.format(config.readBuffer))
-	# vprint('Write buffer: {:d}'.format(config.writeBuffer))
+	# # vprint('Site: {:s}'.format(IndexerConfig.prefix))
+	# vprint('Index: {:s}'.format(IndexerConfig.es_index))
+	# vprint('Type: {:s}'.format(IndexerConfig.es_type))
+	# vprint('Threads: {:d}'.format(IndexerConfig.threads))
+	# vprint('DB Queue size: {:d}'.format(IndexerConfig.db_queue_size))
+	# vprint('Read buffer: {:d}'.format(IndexerConfig.read_buffer))
+	# vprint('Write buffer: {:d}'.format(IndexerConfig.write_buffer))
 
-	import ipdb; ipdb.set_trace()
-	esIndexer = Indexer(Soup(dbConnections.pop(0)).build(), config.limit)
+	# import ipdb; ipdb.set_trace()
+	EsIndexer = Indexer(Soup(db_connections.pop(0)).build(), IndexerConfig.limit)
 
 # 	# Connection to ElasticSearch (write)
 # 	# retry_time = 10
 # 	# timeout = 10
-# 	esServer = ES(server = config.elasticConnections, bulk_size = config.writeBuffer)
-# 	esServer.indices.create_index_if_missing(config.esIndex)
+# 	EsServer = ES(server = IndexerConfig.elasticConnections, bulk_size = IndexerConfig.write_buffer)
+# 	EsServer.indices.create_index_if_missing(IndexerConfig.es_index)
 
 # 	# Create new threads
 # 	for i in threadList:
-# 		thread = Thread.Thread(esIndexer.consume, (startTime, str(i+1), DbQueue, esServer, config.esIndex, config.esType, config.readBuffer, config.writeBuffer))
+		# thread = Thread.Thread(EsIndexer.consume, (
+		# 	startTime,
+		# 	str(i+1),
+		# 	DbQueue,
+		# 	EsServer,
+		# 	IndexerConfig.es_index,
+		# 	IndexerConfig.es_type,
+		# 	IndexerConfig.read_buffer,
+		# 	IndexerConfig.write_buffer))
 # 		threads.append(thread)
 
 # 	for t in threads:
@@ -87,7 +95,7 @@ def main(script, *args, **kwargs):
 # 		t.join()
 
 # 	vprint('Refreshing index...')
-# 	esServer.refresh()
+# 	EsServer.refresh()
 
 # 	vprint('Elapsed: {:f}'.format(time.time() - startTime))
 
