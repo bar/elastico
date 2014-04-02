@@ -44,7 +44,7 @@ class Config:
 		parser.add_argument('-c', '--db-connections', dest = 'dbConnections', type = file, help = 'File where the MySQL database connections are defined.')
 		parser.add_argument('-b', '--db-name', dest = 'dbName', help='MySQL database name.')
 		parser.add_argument('-q', '--db-queue-size', dest = 'dbQueueSize', type = int, choices = range(1, 9), help = 'MySQL databases queue size.')
-		parser.add_argument('-e', '--es-connections', dest = 'elasticConnections', type = file, help = 'File where the ElasticSearch server connections are defined.')
+		parser.add_argument('-e', '--es-connections', dest = 'esConnections', type = file, help = 'File where the ElasticSearch server connections are defined.')
 		parser.add_argument('-n', '--es-index', dest = 'esIndex', help='ElasticSearch index.')
 		parser.add_argument('-y', '--es-type', dest = 'esType', help='ElasticSearch type.')
 		parser.add_argument('-t', '--threads', type = int, choices = range(1, 17), help = 'Number of threads to deploy.')
@@ -66,8 +66,8 @@ class Config:
 			self.verbose = args.verbose
 
 		# elasticsearch connections
-		if args.elasticConnections is not None:
-			self.readElasticConnections()
+		if args.esConnections is not None:
+			self.esConnections = self.readEsConnections('es', args.esConnections)
 
 		# elasticsearch index name
 		if args.esIndex is not None:
@@ -87,7 +87,7 @@ class Config:
 
 		# database connections
 		if args.dbConnections is not None:
-			self.readDbConnections()
+			self.dbConnections = self.readConnections('db', args.dbConnections)
 		else:
 			for i, dbConnection in enumerate(self.dbConnections):
 				self.dbConnections[i] = list(dbConnection)
@@ -130,7 +130,7 @@ class Config:
 				'readBuffer': 100,
 				'writeBuffer': 1000,
 				'limit': 2000,
-				'elasticConnections': [
+				'esConnections': [
 					('http', '192.168.0.1', '9200')
 				],
 			}
@@ -148,31 +148,36 @@ class Config:
 				'readBuffer': 100,
 				'writeBuffer': 1000,
 				'limit': None,
-				'elasticConnections': [
+				'esConnections': [
 					('http', '127.0.0.1', '9200')
 				],
 			}
 
 		return config
 
-	def readElasticConnections(self):
-		elasticConnections = []
-		for line in args.elasticConnections:
-			try:
-				dbConnection = (scheme, hostname, port) = line.split()
-			except ValueError:
-				continue
-			elasticConnections.append(dbConnection)
-		if elasticConnections is not []:
-			self.elasticConnections = elasticConnections
+	def readConnections(self, type, file):
+		"""Read connections configuration from file"""
+		if type == 'es':
+			getConnection = self.getEsConnection
+		else:
+			getConnection = self.getDbConnection
 
-	def readDbConnections(self):
-		dbConnections = []
-		for line in args.dbConnections:
+		list = []
+		for line in file:
 			try:
-				dbConnection = (hostname, username, password) = line.split()
+				connection = getConnection(line.split())
+				list.append(connection)
 			except ValueError:
 				continue
-			dbConnections.append(dbConnection)
-		if dbConnections is not []:
-			self.dbConnections = dbConnections
+		if list is not []:
+			return list
+
+	def getEsConnection(self, line):
+		"""Read connection configuration for Elasticsearch"""
+		connection = (hostname, username, password) = line
+		return connection
+
+	def getDbConnection(self, line):
+		"""Read connection configuration for MySQL"""
+		connection = (schema, hostname, port) = line
+		return connection
