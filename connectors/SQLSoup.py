@@ -8,8 +8,8 @@ __copyright__   = "Copyright 2014, Planet Earth"
 
 from abc import ABCMeta, abstractmethod
 
-# Exceptions
-from utils.exceptions import BadConfigError
+# Errors
+from utils.errors import BadConfigError
 
 # SQLAlchemy
 from sqlalchemy import *

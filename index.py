@@ -21,11 +21,8 @@ from utils.utils import vprint
 # import itertools # iterate faster
 # import time
 
-# Soup
-# from sqlalchemy.exc import *
-# from sqlalchemy.ext.declarative import declarative_base
-# from sqlsoup import SQLSoup, scoped_session, sessionmaker
-
+# Errors
+from utils.errors import BadConfigError
 
 # Config
 from config.Config import Config
