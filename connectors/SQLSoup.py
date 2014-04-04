@@ -76,63 +76,83 @@ class Connector(object):
 
 	def session(self):
 		"""Connector custom session."""
-		#return sqlsoup.scoped_session(sqlsoup.sessionmaker(autoflush=True, expire_on_commit=True, autocommit=False))
-		return sqlsoup.scoped_session(sqlsoup.sessionmaker(autoflush=False, expire_on_commit=False, autocommit=True))
+		# return sqlsoup.scoped_session(sqlsoup.sessionmaker(
+		# 	autoflush=True,
+		# 	expire_on_commit=True,
+		# 	autocommit=False))
+		return sqlsoup.scoped_session(sqlsoup.sessionmaker(
+			autoflush=False,
+			expire_on_commit=False,
+			autocommit=True))
 
 	# @abstractmethod
 	# def bind(self, Soup):
 	# 	raise NotImplementedError()
 
-	def is_db(self, object):
-		"""Test if an object is an sqlsoup.SQLSoup database."""
+	def is_database(self, object):
+		"""Test if an object is an sqlsoup.SQLSoup database.
+
+		Args:
+			object: Object to test.
+
+		Returns:
+			boolean.
+		"""
 		return isinstance(object, sqlsoup.SQLSoup)
 
 	def is_table(self, object):
-		"""Test if an object is an sqlsoup.SQLSoup table."""
+		"""Test if an object is an sqlsoup.SQLSoup table.
+
+		Args:
+			object: Object to test.
+
+		Returns:
+			boolean.
+		"""
 		return isinstance(object, sqlsoup.TableClassType)
 
-	def model(self, model_name, relationships=False,):
-		"""Builds the
+	def build(self, table_name, relationships=False,):
+		"""Returns the constructed model.
 
 		Bind relationships.
 
 		http://docs.sqlalchemy.org/en/latest/orm/relationships.html#adjacency-list-relationships
 
 		Args:
-			model_name (string): Source model name.
+			table_name (string): Source table name.
 			relationships (dict): Models that should be binded to the source model.
 
 		Returns:
-			Object: sqlsoup.SQLSoup object.
+			sqlsoup.TableClassType object.
 
 		TODO:
 			Maybe later read from config models and its relations.
 		"""
 
-		primary_model = self.getMappedObject(model_name)
+		primary_model = self.model(table_name)
 
 		if relationships is False:
 			return primary_model
 
-		if not isinstance(self._db, sqlsoup.SQLSoup):
+		if not self.is_database(self._db):
 			raise BadConfigError('No database connector configured.')
 		db = self._db
 
 		return db
 
-	def getMappedObject(self, model_name):
-		"""Gets a Mapped object based on an existing relation.
+	def model(self, table_name):
+		"""Gets a Mapped object based on an existing table.
 
 		Args:
-			model_name: String with the model to relate to.
+			table_name (string): Model name.
 
 		Returns:
 			Mapped object if exists, None otherwise.
 		"""
-		if not isinstance(self._db, sqlsoup.SQLSoup):
+		if not self.is_database(self._db):
 			raise BadConfigError('No database connector configured.')
 
-		return getattr(self._db, model_name)
+		return getattr(self._db, table_name, None)
 
 	def belongs_to(self, Mapped, relation):
 		"""Gets a Mapped object based on an existing belongs_to relation.
@@ -144,7 +164,7 @@ class Connector(object):
 		Returns:
 			Mapped object if exists, None otherwise.
 		"""
-		return self.getMappedObject(Mapped, relation)
+		return self.model(Mapped, relation)
 
 	def has_many(self, Mapped, relation):
 		"""Gets a Mapped object based on an existing has_many relation.
@@ -156,7 +176,7 @@ class Connector(object):
 		Returns:
 			Mapped object if exists, None otherwise.
 		"""
-		return self.getMappedObject(Mapped, relation)
+		return self.model(Mapped, relation)
 
 	def belongs_to_many(self, Mapped, relation):
 		"""Gets a Mapped object based on an existing belongs_to_many relation.
@@ -169,4 +189,4 @@ class Connector(object):
 			Mapped object if exists, None otherwise.
 		"""
 
-		return self.getMappedObject(Mapped, relation)
+		return self.model(Mapped, relation)
