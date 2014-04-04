@@ -19,65 +19,86 @@ import time
 class Indexer(BaseIndexer):
 	"""Indexer class"""
 
-	# def __init__(self, Model, limit=None):
-		# super(Indexer, self).__init__(Model, limit)
+	# def __init__(self, model, limit=None):
+	# 	super(Indexer, self).__init__(model, limit)
 
-	def produce(self, Model, limit=None):
-		"""Produces the dishes."""
+	def fill_buffer(self, model, limit=None):
+		"""Populates the buffer."""
 		where = True
 
-		total = Model.session.query(func.count(Model.id)).filter(where).scalar()
-		self.total = min(total, limit) if limit not in [None, 0] else total
-		vprint('Total dishes: ' + str(self.total))
+		total = model.session.query(func.count(model.id)).filter(where).scalar()
+		self.index_total = min(total, limit) if limit not in [None, 0] else total
+		vprint('Number of elements to index: ' + str(self.index_total))
 
-		query = Model.filter(where)
+		vprint('Populating the buffer...')
+
+		query = model.filter(where)
 		if limit not in [None, 0]:
 			query = query.limit(limit)
-		self.buffer = query.values(Model.id)
+		self.index_buffer = query.values(model.id)
 
-		vprint('Preparing the food...')
+		vprint('Buffer populated.')
 
-	def consume(self, start_time, thread_name, db_model_queue, es_server, es_index, es_type, read_buffer_size=10, write_buffer_size=1000):
-		"""Consumes the dishes."""
-		# sync threads
+	def index(self,
+		start_time,
+		thread_name,
+		model_queue,
+		es_server,
+		es_index,
+		es_type,
+		read_buffer_size=None,
+		write_buffer_size=None):
+		"""Index the buffered items."""
+
+		if read_buffer_size is None:
+			read_buffer_size = self.read_buffer_size
+		if write_buffer_size is None:
+			write_buffer_size = self.write_buffer_size
+
 		tprint(thread_name, 'Starting... ({:d} > {:d})'.format(read_buffer_size, write_buffer_size))
+
+		# Sync threads
 		time.sleep(0.5)
 
-		readBuffer = self.buffer
-		total = self.total
+		# Items to be indexed
+		buffer = self.index_buffer
+
+		# Number of elements to index
+		total = self.index_total
 
 		try:
-			while not self.empty:
-				ids = []
+			while not self.buffer_empty:
+				model_ids = []
 
 				try:
 					self.lock.acquire()
 					for _ in itertools.repeat(None, read_buffer_size):
-						ids.append(next(readBuffer)[0])
+						model_ids.append(next(buffer)[0])
 				except StopIteration:
-					self.empty = True
-					tprint(thread_name, '## Empty buffer... bang! ##')
-					if len(ids) == 0:
+					self.buffer_empty = True
+					tprint(thread_name, '## Empty buffer... ##')
+					if len(model_ids) == 0:
 						break
 					tprint(thread_name, 'Dying...')
 				finally:
 					self.lock.release()
 
-				PrimaryModels = []
-				Model = db_model_queue.get(True)
+				documents = []
+				Model = model_queue.get(True)
+				import ipdb; ipdb.set_trace()
 
 				Categories = Model.categories
 
-				for mappedElement in Categories.filter(Categories.id.in_(ids)):
-					PrimaryModels.append((mappedElement.id, self.buildModel(mappedElement)))
+				for mappedElement in Categories.filter(Categories.id.in_(model_ids)):
+					documents.append((mappedElement.id, self.buildModel(mappedElement)))
 				#Model.session.close()
-				db_model_queue.put(Model)
+				model_queue.put(Model)
 
-				for PrimaryModel in PrimaryModels:
-					print PrimaryModel
-					# es_server.index(PrimaryModel[1], es_index, es_type, PrimaryModel[0], bulk = True)
+				for document in documents:
+					print document
+					# es_server.index(document[1], es_index, es_type, document[0], bulk = True)
 
-				count = self.count = self.count + len(ids)
+				count = self.index_count = self.index_count + len(model_ids)
 
 				if count % 10 == 0:
 					tprint(thread_name, '{:d}/{:d} ({:.2%}) {{{:f}}}'.format(count, total, float(count) / total, time.time() - start_time), 1)
@@ -267,3 +288,82 @@ class Indexer(BaseIndexer):
 	# 	"""
 
 	# 	return self.getMappedObject(Mapped, relation)
+
+
+	# def getEmptySchema(self, table):
+	# 	""" Get empty structure of a table.
+
+	# 	:type table: object
+	# 	:param table: Mapped object table.
+
+	# 	:rtype: dict
+	# 	:return: A dict with column names with None as values.
+	# 	"""
+	# 	try:
+	# 		schema = {}
+	# 		for c in table.c.keys():
+	# 			schema[c] = None
+
+	# 		return schema
+
+	# 	except NoSuchTableError, e:
+	# 		print('There is no such a table called {}').format(e.args[0])
+	# 		exit(1)
+
+	# def _mappedToModel(self, Mapped):
+	# 	""" Map an SqlSoup object to a CakePHP model.
+
+	# 	:type Mapped: object
+	# 	:param Mapped: Mapped object to convert.
+
+	# 	:rtype: dict
+	# 	:return: Mapped values converted to dict.
+	# 	"""
+
+	# 	if not isinstance(type(Mapped), TableClassType):
+	# 		return None
+
+	# 	schema = self.getEmptySchema(Mapped._table)
+	# 	mappedObjectDict = Mapped.__dict__
+
+	# 	data = {}
+	# 	for k in schema:
+	# 		data[k] = mappedObjectDict[k]
+
+	# 	return data
+
+	# def mappedToModel(self, Mapped):
+	# 	""" Convert a Mapped object into a dict.
+
+	# 	If Mapped has other maps inside, also converts them too.
+
+	# 	:type Mapped: object
+	# 	:param Mapped: Mapped object to convert.
+
+	# 	:rtype: list
+	# 	:return: A list with dicts of converted mapped objects.
+	# 	"""
+	# 	if isinstance(Mapped, list):
+	# 		Model = []
+	# 		for v in Mapped:
+	# 			_v = self._mappedToModel(v)
+	# 			if _v != None:
+	# 				Model.append(_v)
+	# 		return Model
+	# 	else:
+	# 		return self._mappedToModel(Mapped)
+
+	# def translateModel(self, Mapped):
+	# 	""" Converts to dict all members of dict of mapped objects.
+
+	# 	:type Mapped: dict
+	# 	:param Mapped: Dict with mapped object as its values.
+
+	# 	:rtype: dict
+	# 	:return: Dict with mapped values converted.
+	# 	"""
+	# 	Model = {}
+	# 	for key in Mapped:
+	# 		Model[key] = self.mappedToModel(Mapped[key])
+
+	# 	return Model
