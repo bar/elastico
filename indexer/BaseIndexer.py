@@ -12,8 +12,6 @@ from utils import ThreadWatcher # Thread control
 from sqlsoup import TableClassType
 from threading import Lock
 from sys import exit
-import itertools # iterate faster
-import time
 
 
 class BaseIndexer(object):
@@ -25,7 +23,7 @@ class BaseIndexer(object):
 
 	__metaclass__ = ABCMeta
 
-	def __init__(self, Model, limit = None):
+	def __init__(self, Model, limit=None):
 		self.count = 0
 		self.empty = False
 
@@ -39,9 +37,11 @@ class BaseIndexer(object):
 		ThreadWatcher.ThreadWatcher()
 
 	@abstractmethod
-	def produce(self, Model, limit = None):
+	def produce(self, Model, limit=None):
 		"""Fills the buffer with a generator based on MySQL ids that will be later used as the entry point
 		to construct each objects.
+
+		It handles the creation of the MySQL models that will be used as the source of information.
 
 		http://stackoverflow.com/questions/7389759/memory-efficient-built-in-sqlalchemy-iterator-generator
 		http://www.sqlalchemy.org/trac/wiki/UsageRecipes/WindowedRangeQuery
@@ -54,18 +54,20 @@ class BaseIndexer(object):
 		raise NotImplementedError()
 
 	@abstractmethod
-	def consume(self, startTime, threadName, dbQueue, esServer, esIndex, esType, readBufferSize=10, writeBufferSize=1000):
+	def consume(self, start_time, thread_name, db_model_queue, es_server, es_index, es_type, read_buffer_size=10, write_buffer_size=1000):
 		"""Retrieves data from models an its associations.
 
+		It handles the creation of Elasticsearch documents, and the index process.
+
 		Args:
-			startTime (float): Start time in seconds.
-			threadName (string): Thread name
-			dbQueue:
-			esServer (string): Elasticsearch server.
-			esIndex (string): Elasticsearch index.
-			esType (string): Elasticsearch type.
-			readBufferSize (integer): Number of objects to accumulate before indexing.
-			writeBufferSize (integer): Number of objects to accumulate in each index chunk.
+			start_time (float): Start time in seconds.
+			thread_name (string): Thread name
+			db_model_queue:
+			es_server (string): Elasticsearch server.
+			es_index (string): Elasticsearch index.
+			es_type (string): Elasticsearch type.
+			read_buffer_size (integer): Number of objects to accumulate before indexing.
+			write_buffer_size (integer): Number of objects to accumulate in each index chunk.
 		"""
 		raise NotImplementedError()
 
