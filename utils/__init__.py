@@ -1,3 +1,3 @@
-__all__ = ['Thread', 'ThreadWatcher', 'utils']
+__all__ = ['Thread', 'ThreadWatcher', 'errors', 'utils']
 
 print __all__

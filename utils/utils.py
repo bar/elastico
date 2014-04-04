@@ -21,7 +21,7 @@ def vvprint(*a, **k):
 def vvvprint(*a, **k):
 	return print(*a) if Config.VERBOSE >= 3 else lambda *a, **k: None
 
-def tprint(name, text, tab = 0):
+def tprint(name, text, tab=0):
 	vvprint('\t' * tab + '[{:s}] {:s}'.format(name, text))
 
 def uniqify(collection):
