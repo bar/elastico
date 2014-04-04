@@ -9,34 +9,38 @@ __copyright__   = "Copyright 2014, Planet Earth"
 from BaseIndexer import BaseIndexer
 from sqlalchemy import func
 
+# Utility functions
+from utils.utils import vprint, tprint
+
+import itertools # iterate faster
+import time
+
 
 class Indexer(BaseIndexer):
 	"""Indexer class"""
 
-	# def __init__(self, Model, limit = None):
+	# def __init__(self, Model, limit=None):
 		# super(Indexer, self).__init__(Model, limit)
 
 	def produce(self, Model, limit=None):
+		"""Produces the dishes."""
 		where = True
 
-		import ipdb; ipdb.set_trace()
-
-		Categories = Model.categories
-
-		total = Model.session.query(func.count(Categories.id)).filter(where).scalar()
+		total = Model.session.query(func.count(Model.id)).filter(where).scalar()
 		self.total = min(total, limit) if limit not in [None, 0] else total
 		vprint('Total dishes: ' + str(self.total))
 
-		query = Categories.filter(where)
+		query = Model.filter(where)
 		if limit not in [None, 0]:
 			query = query.limit(limit)
-		self.buffer = query.values(Categories.id)
+		self.buffer = query.values(Model.id)
 
 		vprint('Preparing the food...')
 
-	def consume(self, startTime, threadName, dbQueue, esServer, esIndex, esType, readBufferSize=10, writeBufferSize=1000):
+	def consume(self, start_time, thread_name, db_model_queue, es_server, es_index, es_type, read_buffer_size=10, write_buffer_size=1000):
+		"""Consumes the dishes."""
 		# sync threads
-		tprint(threadName, 'Starting... ({:d} > {:d})'.format(readBufferSize, writeBufferSize))
+		tprint(thread_name, 'Starting... ({:d} > {:d})'.format(read_buffer_size, write_buffer_size))
 		time.sleep(0.5)
 
 		readBuffer = self.buffer
@@ -48,37 +52,38 @@ class Indexer(BaseIndexer):
 
 				try:
 					self.lock.acquire()
-					for _ in itertools.repeat(None, readBufferSize):
+					for _ in itertools.repeat(None, read_buffer_size):
 						ids.append(next(readBuffer)[0])
 				except StopIteration:
 					self.empty = True
-					tprint(threadName, '## Empty buffer... bang! ##')
+					tprint(thread_name, '## Empty buffer... bang! ##')
 					if len(ids) == 0:
 						break
-					tprint(threadName, 'Dying...')
+					tprint(thread_name, 'Dying...')
 				finally:
 					self.lock.release()
 
-				Elements = []
-				Model = dbQueue.get(True)
+				PrimaryModels = []
+				Model = db_model_queue.get(True)
 
 				Categories = Model.categories
 
 				for mappedElement in Categories.filter(Categories.id.in_(ids)):
-					Elements.append((mappedElement.id, self.buildModel(mappedElement)))
+					PrimaryModels.append((mappedElement.id, self.buildModel(mappedElement)))
 				#Model.session.close()
-				dbQueue.put(Model)
+				db_model_queue.put(Model)
 
-				for Element in Elements:
-					esServer.index(Element[1], esIndex, esType, Element[0], bulk = True)
+				for PrimaryModel in PrimaryModels:
+					print PrimaryModel
+					# es_server.index(PrimaryModel[1], es_index, es_type, PrimaryModel[0], bulk = True)
 
 				count = self.count = self.count + len(ids)
 
 				if count % 10 == 0:
-					tprint(threadName, '{:d}/{:d} ({:.2%}) {{{:f}}}'.format(count, total, float(count) / total, time.time() - startTime), 1)
+					tprint(thread_name, '{:d}/{:d} ({:.2%}) {{{:f}}}'.format(count, total, float(count) / total, time.time() - start_time), 1)
 
 				if count % 1000 == 0:
-					esServer.refresh()
+					es_server.refresh()
 
 
 		except Exception, e:
@@ -87,48 +92,52 @@ class Indexer(BaseIndexer):
 		except (KeyboardInterrupt, SystemExit):
 			exit(0)
 
-		tprint(threadName, 'Ending... I\'m dead')
+		tprint(thread_name, 'Ending... I\'m dead')
 
-	def buildModel(self, Element):
-		belongsTo = self.belongsTo
-		hasMany = self.hasMany
-		hasAndBelongsToMany = self.hasAndBelongsToMany
+	def buildModel(self, PrimaryModel):
+		has_many = self.has_many
+		belongs_to_many = self.belongs_to_many
+		belongs_to = self.belongs_to
+		has_one = self.has_one
 
-		Tags = hasAndBelongsToMany(Element, 'Tag')
+		return self
 
-		Categories = []
-		for Tag in Tags:
-			for Category in hasAndBelongsToMany(Tag, 'Category'):
-				Categories.append(Category)
-		Categories = uniqify(Categories)
+		# translations here
+		# Tags = belongs_to_many(PrimaryModel, 'Tag')
 
-		Zones = []
-		Zone = belongsTo(Element, 'Zone')
-		while Zone:
-			Zones.append(Zone)
-			ParentZone = belongsTo(Zone, 'ParentZone')
-			Zone = ParentZone
+		# Categories = []
+		# for Tag in Tags:
+		# 	for Category in belongs_to_many(Tag, 'Category'):
+		# 		Categories.append(Category)
+		# Categories = uniqify(Categories)
 
-		return self.translateElement({
-			'Element': Element,
+		# Zones = []
+		# Zone = belongs_to(PrimaryModel, 'Zone')
+		# while Zone:
+		# 	Zones.append(Zone)
+		# 	ParentZone = belongs_to(Zone, 'ParentZone')
+		# 	Zone = ParentZone
 
-			# belongsTo
-			#'User': belongsTo(Element, 'User'),
-			'Zone': Zones,
-			'Product': belongsTo(Element, 'Product'),
-			#'Chain': belongsTo(Element, 'Chain'),
-			#'Campaign': self.belongsTo(Element, 'Campaign'),
+		return self.translateMapped({
+		# 	'Element': PrimaryModel,
 
-			# hasMany
-			#'Phone': hasMany(Element, 'Phone'),
-			'Review': hasMany(Element, 'Review'),
-			'Bookmark': hasMany(Element, 'Bookmark'),
+		# 	# belongs_to
+		# 	#'User': belongs_to(PrimaryModel, 'User'),
+		# 	'Zone': Zones,
+		# 	'Product': belongs_to(PrimaryModel, 'Product'),
+		# 	#'Chain': belongs_to(PrimaryModel, 'Chain'),
+		# 	#'Campaign': self.belongs_to(PrimaryModel, 'Campaign'),
 
-			# habtm
-			'Tag': Tags,
-			'Category': Categories,
-			'Ware': hasAndBelongsToMany(Element, 'Ware'),
-			'Brand': hasAndBelongsToMany(Element, 'Brand'),
+		# 	# has_many
+		# 	#'Phone': has_many(PrimaryModel, 'Phone'),
+		# 	'Review': has_many(PrimaryModel, 'Review'),
+		# 	'Bookmark': has_many(PrimaryModel, 'Bookmark'),
+
+		# 	# habtm
+		# 	'Tag': Tags,
+		# 	'Category': Categories,
+		# 	'Ware': belongs_to_many(PrimaryModel, 'Ware'),
+		# 	'Brand': belongs_to_many(PrimaryModel, 'Brand'),
 		})
 
 	# def getEmptySchema(self, table):
@@ -195,20 +204,20 @@ class Indexer(BaseIndexer):
 	# 	else:
 	# 		return self._mappedToModel(Mapped)
 
-	# def translateElement(self, Mapped):
-	# 	"""Converts to dict all members of dict of mapped objects.
+	def translateMapped(self, Mapped):
+		"""Converts to dict all members of dict of mapped objects.
 
-	# 	Args:
-	# 		Mapped: Dict with mapped object as its values.
+		Args:
+			Mapped: Dict with mapped object as its values.
 
-	# 	Returns:
-	# 		Dict with mapped values converted.
-	# 	"""
-	# 	Model = {}
-	# 	for key in Mapped:
-	# 		Model[key] = self.mappedToModel(Mapped[key])
+		Returns:
+			Dict with mapped values converted.
+		"""
+		Model = {}
+		for key in Mapped:
+			Model[key] = self.mappedToModel(Mapped[key])
 
-	# 	return Model
+		return Model
 
 	# def getMappedObject(self, Mapped, relation):
 	# 	"""Gets a Mapped object based on an existing relation.
@@ -222,8 +231,8 @@ class Indexer(BaseIndexer):
 	# 	"""
 	# 	return getattr(Mapped, relation)
 
-	# def belongsTo(self, Mapped, relation):
-	# 	"""Gets a Mapped object based on an existing belongsTo relation.
+	# def belongs_to(self, Mapped, relation):
+	# 	"""Gets a Mapped object based on an existing belongs_to relation.
 
 	# 	Args:
 	# 		Mapped: Mapped object from where we get its relation.
@@ -234,8 +243,8 @@ class Indexer(BaseIndexer):
 	# 	"""
 	# 	return self.getMappedObject(Mapped, relation)
 
-	# def hasMany(self, Mapped, relation):
-	# 	"""Gets a Mapped object based on an existing hasMany relation.
+	# def has_many(self, Mapped, relation):
+	# 	"""Gets a Mapped object based on an existing has_many relation.
 
 	# 	Args:
 	# 		Mapped: Mapped object from where we get its relation.
@@ -246,8 +255,8 @@ class Indexer(BaseIndexer):
 	# 	"""
 	# 	return self.getMappedObject(Mapped, relation)
 
-	# def hasAndBelongsToMany(self, Mapped, relation):
-	# 	"""Gets a Mapped object based on an existing hasAndBelongsToMany relation.
+	# def belongs_to_many(self, Mapped, relation):
+	# 	"""Gets a Mapped object based on an existing belongs_to_many relation.
 
 	# 	Args:
 	# 		Mapped: Mapped object from where we get its relation.
