@@ -9,7 +9,10 @@ __copyright__   = "Copyright 2014, Planet Earth"
 from abc import ABCMeta, abstractmethod
 
 # Errors
-from utils.errors import BadConfigError
+from utils.errors import (
+	BadConfigError,
+	ConnectorError
+)
 
 # SQLAlchemy
 from sqlalchemy import *
@@ -87,11 +90,51 @@ class Connector(object):
 			expire_on_commit=False,
 			autocommit=True))
 
-	# @abstractmethod
-	# def bind(self, Soup):
-	# 	raise NotImplementedError()
+	def build(self, source_table, source_name, relationships=False):
+		"""Returns the constructed model.
 
-	def is_database(self, object):
+		Bind relationships.
+
+		http://docs.sqlalchemy.org/en/latest/orm/relationships.html#adjacency-list-relationships
+
+		Args:
+			source_table (string): Source table name.
+			source_name (string): Source table name.
+			relationships (dict): Models that should be binded to the source model.
+
+		Returns:
+			sqlsoup.TableClassType object.
+
+		TODO:
+			Maybe later read from config models and its relations.
+		"""
+
+		source_model = Connector.model(self._db, source_table)
+
+		if relationships is False:
+			return source_model
+
+		if not self.is_database(self._db):
+			raise BadConfigError('No database connector configured.')
+		db = self._db
+
+		if 'one_to_many' in relationships:
+			for relationship_table, relationship in relationships['one_to_many'].iteritems():
+				related_model = self.model(self._db, relationship_table)
+				foreign_key = self.field(related_model, relationship['foreign_key'])
+				source_model.relate(
+					relationship_table,
+					#relationship['name'],
+					related_model,
+					foreign_keys=foreign_key,
+					primaryjoin=(foreign_key == source_model.id),
+					backref=source_table)
+					# backref=source_name)
+		# import ipdb; ipdb.set_trace()
+		return self
+
+	@staticmethod
+	def is_database(object):
 		"""Test if an object is an sqlsoup.SQLSoup database.
 
 		Args:
@@ -102,8 +145,9 @@ class Connector(object):
 		"""
 		return isinstance(object, sqlsoup.SQLSoup)
 
-	def is_table(self, object):
-		"""Test if an object is an sqlsoup.SQLSoup table.
+	@staticmethod
+	def is_model(object):
+		"""Test if an object is a mapped model.
 
 		Args:
 			object: Object to test.
@@ -113,82 +157,34 @@ class Connector(object):
 		"""
 		return isinstance(object, sqlsoup.TableClassType)
 
-	def build(self, table_name, relationships=False,):
-		"""Returns the constructed model.
-
-		Bind relationships.
-
-		http://docs.sqlalchemy.org/en/latest/orm/relationships.html#adjacency-list-relationships
-
-		Args:
-			table_name (string): Source table name.
-			relationships (dict): Models that should be binded to the source model.
-
-		Returns:
-			sqlsoup.TableClassType object.
-
-		TODO:
-			Maybe later read from config models and its relations.
-		"""
-
-		primary_model = self.model(table_name)
-
-		if relationships is False:
-			return primary_model
-
-		if not self.is_database(self._db):
-			raise BadConfigError('No database connector configured.')
-		db = self._db
-
-		return db
-
-	def model(self, table_name):
+	@staticmethod
+	def model(db, table_name):
 		"""Gets a Mapped object based on an existing table.
 
 		Args:
 			table_name (string): Model name.
 
 		Returns:
-			Mapped object if exists, None otherwise.
+			Mapped model if exists, None otherwise.
 		"""
-		if not self.is_database(self._db):
+		if not Connector.is_database(db):
 			raise BadConfigError('No database connector configured.')
 
-		return getattr(self._db, table_name, None)
+		# return db.entity(table_name)
+		return getattr(db, table_name, None)
 
-	def belongs_to(self, Mapped, relation):
-		"""Gets a Mapped object based on an existing belongs_to relation.
+	@staticmethod
+	def field(model, field_name):
+		"""Gets a field from a mapped model.
 
 		Args:
-			Mapped: Mapped object from where we get its relation.
-			relation: String with the model to relate to.
+			model: Mapped model
+			field_name (string): Mapped field
 
 		Returns:
 			Mapped object if exists, None otherwise.
 		"""
-		return self.model(Mapped, relation)
+		if not Connector.is_model(model):
+			raise ConnectorError('No database connector configured.')
 
-	def has_many(self, Mapped, relation):
-		"""Gets a Mapped object based on an existing has_many relation.
-
-		Args:
-			Mapped: Mapped object from where we get its relation.
-			relation: String with the model to relate to.
-
-		Returns:
-			Mapped object if exists, None otherwise.
-		"""
-		return self.model(Mapped, relation)
-
-	def belongs_to_many(self, Mapped, relation):
-		"""Gets a Mapped object based on an existing belongs_to_many relation.
-
-		Args:
-			Mapped: Mapped object from where we get its relation.
-			relation: String with the model to relate to.
-
-		Returns:
-			Mapped object if exists, None otherwise.
-		"""
-
-		return self.model(Mapped, relation)
+		return getattr(model, field_name, None)
