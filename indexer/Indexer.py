@@ -9,11 +9,14 @@ __copyright__   = "Copyright 2014, Planet Earth"
 from BaseIndexer import BaseIndexer
 from sqlalchemy import func
 
-# Utility functions
-from utils.utils import vprint, tprint
-
 import itertools # iterate faster
 import time
+
+# Utility functions
+from utils.utils import vprint, tprint, uniqify
+
+# Inflection
+import inflection
 
 
 class Indexer(BaseIndexer):
@@ -43,7 +46,7 @@ class Indexer(BaseIndexer):
 		start_time,
 		thread_name,
 		read_queue,
-		es_server,
+		es_connector,
 		es_index,
 		es_type,
 		read_chunk_size=None):
@@ -80,20 +83,18 @@ class Indexer(BaseIndexer):
 				finally:
 					self._lock.release()
 
-				model = read_queue.get(True)
-				import ipdb; ipdb.set_trace()
-
-				Categories = model.categories
+				source_model = read_queue.get(True)
+				# import ipdb; ipdb.set_trace()
 
 				documents = []
-				for mappedElement in Categories.filter(Categories.id.in_(model_ids)):
-					documents.append((mappedElement.id, self.buildModel(mappedElement)))
-				#model.session.close()
-				read_queue.put(model)
+				for filtered_model in source_model.filter(source_model.id.in_(model_ids)):
+					documents.append((filtered_model.id, self.build_document(filtered_model)))
+				#source_model.session.close()
+				read_queue.put(source_model)
 
 				for document in documents:
 					print document
-					# es_server.index(document[1], es_index, es_type, document[0], bulk = True)
+					# es_connector.index(document[1], es_index, es_type, document[0], bulk = True)
 
 				count = self.index_count = self.index_count + len(model_ids)
 
@@ -101,7 +102,8 @@ class Indexer(BaseIndexer):
 					tprint(thread_name, '{:d}/{:d} ({:.2%}) {{{:f}}}'.format(count, total, float(count) / total, time.time() - start_time), 1)
 
 				if count % 1000 == 0:
-					es_server.refresh()
+					pass
+					# es_connector.refresh()
 
 
 		except Exception, e:
@@ -112,255 +114,149 @@ class Indexer(BaseIndexer):
 
 		tprint(thread_name, 'Ending... I\'m dead')
 
-	def buildModel(self, PrimaryModel):
-		has_many = self.has_many
-		belongs_to_many = self.belongs_to_many
-		belongs_to = self.belongs_to
-		has_one = self.has_one
+	def build_document(self, source_model):
+		# one_to_many = self.one_to_many
+		# many_to_many = self.many_to_many
+		# one_to_one = self.one_to_one
+		# many_to_one = self.many_to_one
 
-		return self
+		# return self
 
 		# translations here
-		# Tags = belongs_to_many(PrimaryModel, 'Tag')
+		# Tags = many_to_many(source_model, 'Tag')
 
 		# Categories = []
 		# for Tag in Tags:
-		# 	for Category in belongs_to_many(Tag, 'Category'):
+		# 	for Category in many_to_many(Tag, 'Category'):
 		# 		Categories.append(Category)
 		# Categories = uniqify(Categories)
 
 		# Zones = []
-		# Zone = belongs_to(PrimaryModel, 'Zone')
+		# Zone = many_to_one(source_model, 'Zone')
 		# while Zone:
 		# 	Zones.append(Zone)
-		# 	ParentZone = belongs_to(Zone, 'ParentZone')
+		# 	ParentZone = many_to_one(Zone, 'ParentZone')
 		# 	Zone = ParentZone
+		mapped_model = {
+			'Category': source_model,
+			'AlternativeLanguages': source_model.alternative_languages,
+			'NewsGroups': source_model.news_groups,
+			'ExternalPages': source_model.external_pages,
+		# 	'Element': source_model,
 
-		return self.translateMapped({
-		# 	'Element': PrimaryModel,
-
-		# 	# belongs_to
-		# 	#'User': belongs_to(PrimaryModel, 'User'),
+		# 	# many_to_one
+		# 	#'User': many_to_one(source_model, 'User'),
 		# 	'Zone': Zones,
-		# 	'Product': belongs_to(PrimaryModel, 'Product'),
-		# 	#'Chain': belongs_to(PrimaryModel, 'Chain'),
-		# 	#'Campaign': self.belongs_to(PrimaryModel, 'Campaign'),
+		# 	'Product': many_to_one(source_model, 'Product'),
+		# 	#'Chain': many_to_one(source_model, 'Chain'),
+		# 	#'Campaign': self.many_to_one(source_model, 'Campaign'),
 
-		# 	# has_many
-		# 	#'Phone': has_many(PrimaryModel, 'Phone'),
-		# 	'Review': has_many(PrimaryModel, 'Review'),
-		# 	'Bookmark': has_many(PrimaryModel, 'Bookmark'),
+		# 	# one_to_many
+		# 	#'Phone': one_to_many(source_model, 'Phone'),
+		# 	'Review': one_to_many(source_model, 'Review'),
+		# 	'Bookmark': one_to_many(source_model, 'Bookmark'),
 
 		# 	# habtm
 		# 	'Tag': Tags,
 		# 	'Category': Categories,
-		# 	'Ware': belongs_to_many(PrimaryModel, 'Ware'),
-		# 	'Brand': belongs_to_many(PrimaryModel, 'Brand'),
-		})
+		# 	'Ware': many_to_many(source_model, 'Ware'),
+		# 	'Brand': many_to_many(source_model, 'Brand'),
+		}
+		import ipdb; ipdb.set_trace()
+		return mapped_model
 
-	# def getEmptySchema(self, table):
-	# 	"""Get empty structure of a table.
+		return self.translate_mapped(mapped_model)
 
-	# 	Args:
-	# 		table: Mapped object table.
-
-	# 	Returns:
-	# 		A dict with column names with None as values.
-	# 	"""
-	# 	try:
-	# 		schema = {}
-	# 		for c in table.c.keys():
-	# 			schema[c] = None
-
-	# 		return schema
-
-	# 	except NoSuchTableError, e:
-	# 		print('There is no such a table called {}').format(e.args[0])
-	# 		exit(1)
-
-	# def _mappedToModel(self, Mapped):
-	# 	"""Map an SqlSoup object to a CakePHP model.
-
-	# 	Args:
-	# 		Mapped: Mapped object to convert.
-
-	# 	Returns:
-	# 		Mapped values converted to dict.
-	# 	"""
-
-	# 	if not isinstance(type(Mapped), TableClassType):
-	# 		return None
-
-	# 	schema = self.getEmptySchema(Mapped._table)
-	# 	mappedObjectDict = Mapped.__dict__
-
-	# 	data = {}
-	# 	for k in schema:
-	# 		data[k] = mappedObjectDict[k]
-
-	# 	return data
-
-	# def mappedToModel(self, Mapped):
-	# 	"""Convert a Mapped object into a dict.
-
-	# 	If Mapped has other maps inside, also converts them too.
-
-	# 	Args:
-	# 		Mapped: Mapped object to convert.
-
-	# 	Returns:
-	# 		A list with dicts of converted mapped objects.
-
-	# 	"""
-	# 	if isinstance(Mapped, list):
-	# 		model = []
-	# 		for v in Mapped:
-	# 			_v = self._mappedToModel(v)
-	# 			if _v != None:
-	# 				model.append(_v)
-	# 		return model
-	# 	else:
-	# 		return self._mappedToModel(Mapped)
-
-	def translateMapped(self, Mapped):
+	def translate_mapped(self, mapped_model):
 		"""Converts to dict all members of dict of mapped objects.
 
 		Args:
-			Mapped: Dict with mapped object as its values.
+			mapped_model: Dict with mapped object as its values.
 
 		Returns:
 			Dict with mapped values converted.
 		"""
 		model = {}
-		for key in Mapped:
-			model[key] = self.mappedToModel(Mapped[key])
+		for key in mapped_model:
+			model[key] = self.mappedToModel(mapped_model[key])
 
 		return model
 
-	# def getMappedObject(self, Mapped, relation):
-	# 	"""Gets a Mapped object based on an existing relation.
+	def empty_schema(self, mapped_model):
+		"""Create an empty schema for the givven table.
 
-	# 	Args:
-	# 		Mapped: Mapped object from where we get its relation.
-	# 		relation: String with the model to relate to.
+		Args:
+			mapped_model: Mapped model.
 
-	# 	Returns:
-	# 		Mapped object if exists, None otherwise.
-	# 	"""
-	# 	return getattr(Mapped, relation)
+		Returns:
+			A dict with {column_name: None}.
+		"""
+		try:
+			return {k:None for k in mapped_model.c.keys()}
+		except NoSuchTableError, e:
+			raise ConnectorError
+		# schema = {}
+		# try:
+		# 	for c in mapped_model.c.keys():
+		# 		schema[c] = None
+		# except NoSuchTableError, e:
+		# 	raise ConnectorError
+		# return schema
 
-	# def belongs_to(self, Mapped, relation):
-	# 	"""Gets a Mapped object based on an existing belongs_to relation.
+	def _mapped_to_model(self, mapped_model):
+		""" Map an SqlSoup object to a CakePHP model.
 
-	# 	Args:
-	# 		Mapped: Mapped object from where we get its relation.
-	# 		relation: String with the model to relate to.
+		:type Mapped: object
+		:param Mapped: Mapped object to convert.
 
-	# 	Returns:
-	# 		Mapped object if exists, None otherwise.
-	# 	"""
-	# 	return self.getMappedObject(Mapped, relation)
+		:rtype: dict
+		:return: Mapped values converted to dict.
+		"""
 
-	# def has_many(self, Mapped, relation):
-	# 	"""Gets a Mapped object based on an existing has_many relation.
+		if not isinstance(type(mapped_model), TableClassType):
+			return None
 
-	# 	Args:
-	# 		Mapped: Mapped object from where we get its relation.
-	# 		relation: String with the model to relate to.
+		schema = self.empty_schema(mapped_model._table)
+		mappedObjectDict = mapped_model.__dict__
 
-	# 	Returns:
-	# 		Mapped object if exists, None otherwise.
-	# 	"""
-	# 	return self.getMappedObject(Mapped, relation)
+		data = {}
+		for k in schema:
+			data[k] = mappedObjectDict[k]
 
-	# def belongs_to_many(self, Mapped, relation):
-	# 	"""Gets a Mapped object based on an existing belongs_to_many relation.
+		return data
 
-	# 	Args:
-	# 		Mapped: Mapped object from where we get its relation.
-	# 		relation: String with the model to relate to.
+	def mappedToModel(self, mapped_model):
+		""" Convert a Mapped object into a dict.
 
-	# 	Returns:
-	# 		Mapped object if exists, None otherwise.
-	# 	"""
+		If Mapped has other maps inside, also converts them too.
 
-	# 	return self.getMappedObject(Mapped, relation)
+		:type Mapped: object
+		:param mapped_model: Mapped object to convert.
 
+		:rtype: list
+		:return: A list with dicts of converted mapped objects.
+		"""
+		if isinstance(mapped_model, list):
+			model = []
+			for v in mapped_model:
+				_v = self._mapped_to_model(v)
+				if _v != None:
+					model.append(_v)
+			return model
+		else:
+			return self._mapped_to_model(mapped_model)
 
-	# def getEmptySchema(self, table):
-	# 	""" Get empty structure of a table.
+	def translateModel(self, mapped_model):
+		""" Converts to dict all members of dict of mapped objects.
 
-	# 	:type table: object
-	# 	:param table: Mapped object table.
+		:type Mapped: dict
+		:param mapped_model: Dict with mapped object as its values.
 
-	# 	:rtype: dict
-	# 	:return: A dict with column names with None as values.
-	# 	"""
-	# 	try:
-	# 		schema = {}
-	# 		for c in table.c.keys():
-	# 			schema[c] = None
+		:rtype: dict
+		:return: Dict with mapped values converted.
+		"""
+		model = {}
+		for key in mapped_model:
+			model[key] = self.mappedToModel(mapped_model[key])
 
-	# 		return schema
-
-	# 	except NoSuchTableError, e:
-	# 		print('There is no such a table called {}').format(e.args[0])
-	# 		exit(1)
-
-	# def _mappedToModel(self, Mapped):
-	# 	""" Map an SqlSoup object to a CakePHP model.
-
-	# 	:type Mapped: object
-	# 	:param Mapped: Mapped object to convert.
-
-	# 	:rtype: dict
-	# 	:return: Mapped values converted to dict.
-	# 	"""
-
-	# 	if not isinstance(type(Mapped), TableClassType):
-	# 		return None
-
-	# 	schema = self.getEmptySchema(Mapped._table)
-	# 	mappedObjectDict = Mapped.__dict__
-
-	# 	data = {}
-	# 	for k in schema:
-	# 		data[k] = mappedObjectDict[k]
-
-	# 	return data
-
-	# def mappedToModel(self, Mapped):
-	# 	""" Convert a Mapped object into a dict.
-
-	# 	If Mapped has other maps inside, also converts them too.
-
-	# 	:type Mapped: object
-	# 	:param Mapped: Mapped object to convert.
-
-	# 	:rtype: list
-	# 	:return: A list with dicts of converted mapped objects.
-	# 	"""
-	# 	if isinstance(Mapped, list):
-	# 		model = []
-	# 		for v in Mapped:
-	# 			_v = self._mappedToModel(v)
-	# 			if _v != None:
-	# 				model.append(_v)
-	# 		return model
-	# 	else:
-	# 		return self._mappedToModel(Mapped)
-
-	# def translateModel(self, Mapped):
-	# 	""" Converts to dict all members of dict of mapped objects.
-
-	# 	:type Mapped: dict
-	# 	:param Mapped: Dict with mapped object as its values.
-
-	# 	:rtype: dict
-	# 	:return: Dict with mapped values converted.
-	# 	"""
-	# 	model = {}
-	# 	for key in Mapped:
-	# 		model[key] = self.mappedToModel(Mapped[key])
-
-	# 	return model
+		return model

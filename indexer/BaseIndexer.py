@@ -72,7 +72,7 @@ class BaseIndexer(object):
 		start_time,
 		thread_name,
 		read_queue,
-		es_server,
+		es_connector,
 		es_index,
 		es_type,
 		read_chunk_size):
@@ -86,7 +86,7 @@ class BaseIndexer(object):
 			start_time (float): Start time in seconds.
 			thread_name (string): Thread name
 			read_queue (queue.Queue): Queue filled with models to be indexed
-			es_server (string): Elasticsearch server.
+			es_connector (string): Elasticsearch connector.
 			es_index (string): Elasticsearch index.
 			es_type (string): Elasticsearch type.
 			read_chunk_size (integer): Number of objects to accumulate before indexing.
