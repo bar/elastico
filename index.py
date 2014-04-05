@@ -43,15 +43,6 @@ def main(script, *args, **kwargs):
 	# Config options
 	config = Config()
 
-	# Threads list
-	threads = []
-
-	# Db connections queue
-	db_connections_queue = Queue()
-
-	# Db connections list
-	db_connections = config.db_connections
-
 	# temporary MySQL settings
 	source_table = 'categories'
 	source_relationships = {
@@ -77,12 +68,22 @@ def main(script, *args, **kwargs):
 		'has_one': {
 		}
 	}
+	source_relationships = False
 
+	# Threads list
+	threads = []
 
-	# Populte db connections queue (round robin)
+	# Db models queue
+	read_queue = Queue()
+
+	# Db connections list
+	db_connections = config.db_connections
+
+	# Populte db models queue (round robin)
 	for _ in range(config.db_queue_size):
 		db_connection = db_connections.pop(0)
-		db_connections_queue.put(DbConnector(db_connection).db())
+		model = DbConnector(db_connection).db().build(source_table, source_relationships)
+		read_queue.put(model)
 		db_connections.append(db_connection)
 
 	vprint('Index: {:s}'.format(config.es_index))

@@ -71,7 +71,7 @@ class BaseIndexer(object):
 	def index(self,
 		start_time,
 		thread_name,
-		model_queue,
+		read_queue,
 		es_server,
 		es_index,
 		es_type,
@@ -85,7 +85,7 @@ class BaseIndexer(object):
 		Args:
 			start_time (float): Start time in seconds.
 			thread_name (string): Thread name
-			model_queue (queue.Queue): Queue filled with models to be indexed
+			read_queue (queue.Queue): Queue filled with models to be indexed
 			es_server (string): Elasticsearch server.
 			es_index (string): Elasticsearch index.
 			es_type (string): Elasticsearch type.

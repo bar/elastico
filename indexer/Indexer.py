@@ -42,7 +42,7 @@ class Indexer(BaseIndexer):
 	def index(self,
 		start_time,
 		thread_name,
-		model_queue,
+		read_queue,
 		es_server,
 		es_index,
 		es_type,
@@ -80,16 +80,16 @@ class Indexer(BaseIndexer):
 				finally:
 					self._lock.release()
 
-				documents = []
-				Model = model_queue.get(True)
+				model = read_queue.get(True)
 				import ipdb; ipdb.set_trace()
 
-				Categories = Model.categories
+				Categories = model.categories
 
+				documents = []
 				for mappedElement in Categories.filter(Categories.id.in_(model_ids)):
 					documents.append((mappedElement.id, self.buildModel(mappedElement)))
-				#Model.session.close()
-				model_queue.put(Model)
+				#model.session.close()
+				read_queue.put(model)
 
 				for document in documents:
 					print document
@@ -213,12 +213,12 @@ class Indexer(BaseIndexer):
 
 	# 	"""
 	# 	if isinstance(Mapped, list):
-	# 		Model = []
+	# 		model = []
 	# 		for v in Mapped:
 	# 			_v = self._mappedToModel(v)
 	# 			if _v != None:
-	# 				Model.append(_v)
-	# 		return Model
+	# 				model.append(_v)
+	# 		return model
 	# 	else:
 	# 		return self._mappedToModel(Mapped)
 
@@ -231,11 +231,11 @@ class Indexer(BaseIndexer):
 		Returns:
 			Dict with mapped values converted.
 		"""
-		Model = {}
+		model = {}
 		for key in Mapped:
-			Model[key] = self.mappedToModel(Mapped[key])
+			model[key] = self.mappedToModel(Mapped[key])
 
-		return Model
+		return model
 
 	# def getMappedObject(self, Mapped, relation):
 	# 	"""Gets a Mapped object based on an existing relation.
@@ -341,12 +341,12 @@ class Indexer(BaseIndexer):
 	# 	:return: A list with dicts of converted mapped objects.
 	# 	"""
 	# 	if isinstance(Mapped, list):
-	# 		Model = []
+	# 		model = []
 	# 		for v in Mapped:
 	# 			_v = self._mappedToModel(v)
 	# 			if _v != None:
-	# 				Model.append(_v)
-	# 		return Model
+	# 				model.append(_v)
+	# 		return model
 	# 	else:
 	# 		return self._mappedToModel(Mapped)
 
@@ -359,8 +359,8 @@ class Indexer(BaseIndexer):
 	# 	:rtype: dict
 	# 	:return: Dict with mapped values converted.
 	# 	"""
-	# 	Model = {}
+	# 	model = {}
 	# 	for key in Mapped:
-	# 		Model[key] = self.mappedToModel(Mapped[key])
+	# 		model[key] = self.mappedToModel(Mapped[key])
 
-	# 	return Model
+	# 	return model
