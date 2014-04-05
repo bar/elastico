@@ -22,7 +22,10 @@ from utils.utils import vprint
 # import time
 
 # Errors
-from utils.errors import BadConfigError
+from utils.errors import (
+	BadConfigError,
+	ConnectorError
+)
 
 # Config
 from config.Config import Config
@@ -45,8 +48,34 @@ def main(script, *args, **kwargs):
 
 	# temporary MySQL settings
 	source_table = 'categories'
+	source_name = 'Categories'
 	source_relationships = {
-		'belongs_to_many': {
+		'one_to_many': {
+			'alternative_languages': {
+				'name': 'AlternativeLanguages',
+				'foreign_key': 'category_id'
+			},
+			# 'child_categories':{
+			# 	'name': 'ChildCategories',
+			# 	'foreign_key': 'parent_id'
+			# 	# 'foreignKey' => 'parent_id',
+			# },
+			'external_pages': {
+				'name': 'ExternalPages',
+				'foreign_key': 'category_id'
+			},
+			'news_groups': {
+				'name': 'NewsGroups',
+				'foreign_key': 'category_id'
+			}
+		},
+		'many_to_one': {
+		# 	'ParentCategories'
+		# 		# 'foreignKey' => 'parent_id',
+		},
+		'one_to_one': {
+		},
+		'many_to_many': {
 		# 	'AliasedCategories'
 		# 		# 'through' => 'Aliases'
 		# 	'RelatedCategories'
@@ -54,21 +83,14 @@ def main(script, *args, **kwargs):
 		# 	'SymbolicCategories'
 		# 		# 'through' => 'Symbolics'
 		},
-		'has_many': {
-			'alternative_languages'
-			# 'ChildCategories'
-				# 'foreignKey' => 'parent_id',
-			'external_pages'
-			'news_groups'
-		},
-		'belongs_to': {
-		# 	'ParentCategories'
-		# 		# 'foreignKey' => 'parent_id',
-		},
-		'has_one': {
-		}
 	}
-	source_relationships = False
+	document_mapping = {
+		'Category': 'categories',
+
+		# many_to_one
+		#'User': many_to_one(source_model, 'User'),
+	}
+	# source_relationships = False
 
 	# Threads list
 	threads = []
@@ -82,7 +104,7 @@ def main(script, *args, **kwargs):
 	# Populte db models queue (round robin)
 	for _ in range(config.db_queue_size):
 		db_connection = db_connections.pop(0)
-		model = DbConnector(db_connection).db().build(source_table, source_relationships)
+		model = DbConnector(db_connection).db().build(source_table, source_name, source_relationships)
 		read_queue.put(model)
 		db_connections.append(db_connection)
 
