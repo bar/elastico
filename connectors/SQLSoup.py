@@ -27,12 +27,9 @@ class Connector(object):
 
 	Attributes:
 		url (string): Engine url
-		_db: sqlsoup.SQLSoup object
-
 	"""
 
 	url = None
-
 	_db = None
 
 	def __init__(self, connection, engine='mysql'):

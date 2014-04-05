@@ -49,8 +49,10 @@ class BaseIndexer(object):
 
 	@abstractmethod
 	def fill_buffer(self, model, limit):
-		"""Fills the read buffer with a generator based on MySQL ids that will be later used as the entry point
-		to construct each objects.
+		"""Populates the buffer.
+
+		Fills the read buffer with a generator based on MySQL ids that will be later used as the entry point
+		to construct the documents to be indexed.
 
 		It handles the creation of the MySQL models that will be used as the source of information.
 
@@ -78,7 +80,9 @@ class BaseIndexer(object):
 		es_type,
 		read_buffer_size,
 		write_buffer_size):
-		"""Retrieves data from models an its associations.
+		"""Indexes the buffered items.
+
+		Retrieves data from models an its associations.
 
 		It handles the creation of Elasticsearch documents, and the index process.
 

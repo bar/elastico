@@ -48,7 +48,7 @@ class Indexer(BaseIndexer):
 		es_type,
 		read_buffer_size=None,
 		write_buffer_size=None):
-		"""Index the buffered items."""
+		"""Indexes the buffered items."""
 
 		if read_buffer_size is None:
 			read_buffer_size = self.read_buffer_size
