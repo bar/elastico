@@ -30,19 +30,18 @@ class BaseIndexer(object):
 	"""
 
 	__metaclass__ = ABCMeta
+	_lock = threading.Lock()
 
 	index_buffer = None
 	index_count = 0
 	index_total = 0
 	buffer_empty = False
 	read_chunk_size = 10
-	_lock = threading.Lock()
 
 	def __init__(self, model, limit=None):
-		# Producer
 		self.fill_buffer(model, limit)
 
-		# Manage threads
+		# Threads manager
 		ThreadWatcher.ThreadWatcher()
 
 	@abstractmethod

@@ -29,8 +29,9 @@ class Connector(object):
 		url (string): Engine url
 	"""
 
-	url = None
 	_db = None
+
+	url = None
 
 	def __init__(self, connection, engine='mysql'):
 		"""Conenctor initialization."""
@@ -56,7 +57,7 @@ class Connector(object):
 			db_charset (string): DB connection character set.
 
 		Returns:
-			Object: sqlsoup.SQLSoup object.
+			sqlsoup.SQLSoup object.
 		"""
 
 		if self.url is None:
@@ -72,7 +73,11 @@ class Connector(object):
 		return self
 
 	def session(self):
-		"""Connector custom session."""
+		"""Connector custom session.
+
+		Returns:
+			sqlalchemy.orm.scoping.scoped_session
+		"""
 		# return sqlsoup.scoped_session(sqlsoup.sessionmaker(
 		# 	autoflush=True,
 		# 	expire_on_commit=True,
@@ -93,7 +98,7 @@ class Connector(object):
 			object: Object to test.
 
 		Returns:
-			boolean.
+			Boolean.
 		"""
 		return isinstance(object, sqlsoup.SQLSoup)
 
@@ -104,7 +109,7 @@ class Connector(object):
 			object: Object to test.
 
 		Returns:
-			boolean.
+			Boolean.
 		"""
 		return isinstance(object, sqlsoup.TableClassType)
 

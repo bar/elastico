@@ -68,7 +68,7 @@ class Indexer(BaseIndexer):
 				model_ids = []
 
 				try:
-					self.lock.acquire()
+					self._lock.acquire()
 					for _ in itertools.repeat(None, read_chunk_size):
 						model_ids.append(next(buffer)[0])
 				except StopIteration:
@@ -78,7 +78,7 @@ class Indexer(BaseIndexer):
 						break
 					tprint(thread_name, 'Dying...')
 				finally:
-					self.lock.release()
+					self._lock.release()
 
 				documents = []
 				Model = model_queue.get(True)
