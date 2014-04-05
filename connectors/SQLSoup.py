@@ -53,10 +53,10 @@ class Connector(object):
 		Creates one session per db object.
 
 		Args:
-			session (mixed): Session to use for the connector.
-				None, let sqlsoup.SQLSoup use its own session.
-				True, use the connector custom session.
-				Session object
+			session (mixed): Session registry to use for the connector.
+				None, let sqlsoup.SQLSoup use its own default session registry.
+				True, use the connector custom session registry.
+				Session registry object
 			db_charset (string): DB connection character set.
 
 		Returns:
@@ -76,7 +76,7 @@ class Connector(object):
 		return self
 
 	def session(self):
-		"""Connector custom session.
+		"""Connector custom session registry.
 
 		Returns:
 			sqlalchemy.orm.scoping.scoped_session
@@ -90,7 +90,7 @@ class Connector(object):
 			expire_on_commit=False,
 			autocommit=True))
 
-	def build(self, source_table, source_name, relationships=False):
+	def build(self, source_table, relationships=False):
 		"""Returns the constructed model.
 
 		Bind relationships.
@@ -99,7 +99,6 @@ class Connector(object):
 
 		Args:
 			source_table (string): Source table name.
-			source_name (string): Source table name.
 			relationships (dict): Models that should be binded to the source model.
 
 		Returns:
@@ -170,8 +169,7 @@ class Connector(object):
 		if not Connector.is_database(db):
 			raise BadConfigError('No database connector configured.')
 
-		# return db.entity(table_name)
-		return getattr(db, table_name, None)
+		return db.entity(table_name)
 
 	@staticmethod
 	def field(model, field_name):

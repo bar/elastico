@@ -48,30 +48,19 @@ def main(script, *args, **kwargs):
 
 	# temporary MySQL settings
 	source_table = 'categories'
-	source_name = 'Categories'
 	source_relationships = {
 		'one_to_many': {
 			'alternative_languages': {
-				'name': 'AlternativeLanguages',
 				'foreign_key': 'category_id'
 			},
-			# 'child_categories':{
-			# 	'name': 'ChildCategories',
-			# 	'foreign_key': 'parent_id'
-			# 	# 'foreignKey' => 'parent_id',
-			# },
 			'external_pages': {
-				'name': 'ExternalPages',
 				'foreign_key': 'category_id'
 			},
 			'news_groups': {
-				'name': 'NewsGroups',
 				'foreign_key': 'category_id'
 			}
 		},
 		'many_to_one': {
-		# 	'ParentCategories'
-		# 		# 'foreignKey' => 'parent_id',
 		},
 		'one_to_one': {
 		},
@@ -83,12 +72,28 @@ def main(script, *args, **kwargs):
 		# 	'SymbolicCategories'
 		# 		# 'through' => 'Symbolics'
 		},
+		'adjacency_list': {
+			'parent_category': {
+				'foreign_key': 'parent_id',
+				'backref': 'child_categories'
+			},
+		}
 	}
-	document_mapping = {
-		'Category': 'categories',
-
-		# many_to_one
-		#'User': many_to_one(source_model, 'User'),
+	source_table = 'external_pages'
+	source_relationships = {
+		'one_to_many': {
+		},
+		'many_to_one': {
+			'categories': {
+				'foreign_key': 'category_id'
+			}
+		},
+		'one_to_one': {
+		},
+		'many_to_many': {
+		},
+		'adjacency_list': {
+		}
 	}
 	# source_relationships = False
 
@@ -104,7 +109,7 @@ def main(script, *args, **kwargs):
 	# Populte db models queue (round robin)
 	for _ in range(config.db_queue_size):
 		db_connection = db_connections.pop(0)
-		model = DbConnector(db_connection).db().build(source_table, source_name, source_relationships)
+		model = DbConnector(db_connection).db().build(source_table, source_relationships)
 		read_queue.put(model)
 		db_connections.append(db_connection)
 
@@ -118,7 +123,7 @@ def main(script, *args, **kwargs):
 	# TODO
 	db_connector = DbConnector(db_connections[0]).db()
 
-	source_model =  db_connector.build(source_table, source_name, source_relationships)
+	source_model =  db_connector.build(source_table, source_relationships)
 
 	if not source_model:
 		raise ConnectorError
