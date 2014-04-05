@@ -1,3 +1,3 @@
-__all__ = ['Soup']
+__all__ = ['SQLSoup']
 
 print __all__
