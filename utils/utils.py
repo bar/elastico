@@ -36,4 +36,4 @@ def uniqify(collection):
 
 	seen = set()
 	seen_add = seen.add
-	return [ x for x in collection if x not in seen and not seen_add(x)]
+	return [x for x in collection if x not in seen and not seen_add(x)]

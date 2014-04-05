@@ -116,32 +116,53 @@ def main(script, *args, **kwargs):
 	vprint('Write chunk size: {:d}'.format(config.write_chunk_size))
 
 	# TODO
-	IndexerConnector = DbConnector(db_connections[0]).db()
-	source_relationships = False
+	db_connector = DbConnector(db_connections[0]).db()
 
-	PrimaryModel =  IndexerConnector.build(source_table, source_relationships)
+	source_model =  db_connector.build(source_table, source_name, source_relationships)
 
-	if not PrimaryModel:
+	if not source_model:
 		raise ConnectorError
 
-	# Connection to ElasticSearch (write)
+	# import ipdb; ipdb.set_trace()
+	indexer = Indexer(source_model, limit=config.limit)
+
+	# Elasticsearch connector (write)
 	# retry_time = 10
 	# timeout = 10
-	es_server = ES(server=config.es_connections, bulk_size=config.write_chunk_size)
+	es_connector = ES(server=config.es_connections, bulk_size=config.write_chunk_size)
 
-	indexer = Indexer(PrimaryModel, limit=config.limit)
+	# Create index if necessary
+	# es_connector.indices.create_index_if_missing(config.es_index)
 
 	indexer.index(
 		start_time,
 		str(1),
-		db_connections_queue,
-		es_server,
+		read_queue,
+		es_connector,
 		config.es_index,
 		config.es_type,
 		config.read_chunk_size)
 
+# 	# Create new threads
+	# for i in range(config.threads):
+		# thread = Thread(indexer.index, (
+		# 	start_time,
+		# 	str(i+1),
+		# 	read_queue,
+		# 	es_connector,
+		# 	config.es_index,
+		# 	config.es_type,
+		# 	config.read_chunk_size)
+		# threads.append(thread)
+
+	# for t in threads:
+	# 	t.start()
+
+	# for t in threads:
+	# 	t.join()
+
 	vprint('Refreshing index...')
-	# es_server.refresh()
+	# es_connector.refresh()
 
 	vprint('Elapsed: {:f}'.format(time.time() - start_time))
 
