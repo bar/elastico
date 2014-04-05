@@ -54,6 +54,30 @@ def main(script, *args, **kwargs):
 
 	# temporary MySQL settings
 	source_table = 'categories'
+	source_relationships = {
+		'belongs_to_many': {
+		# 	'AliasedCategories'
+		# 		# 'through' => 'Aliases'
+		# 	'RelatedCategories'
+		# 		# 'through' => 'Relateds'
+		# 	'SymbolicCategories'
+		# 		# 'through' => 'Symbolics'
+		},
+		'has_many': {
+			'alternative_languages'
+			# 'ChildCategories'
+				# 'foreignKey' => 'parent_id',
+			'external_pages'
+			'news_groups'
+		},
+		'belongs_to': {
+		# 	'ParentCategories'
+		# 		# 'foreignKey' => 'parent_id',
+		},
+		'has_one': {
+		}
+	}
+
 
 	# Populte db connections queue (round robin)
 	for _ in range(config.db_queue_size):
@@ -65,8 +89,8 @@ def main(script, *args, **kwargs):
 	vprint('Type: {:s}'.format(config.es_type))
 	vprint('Threads: {:d}'.format(config.threads))
 	vprint('DB Queue size: {:d}'.format(config.db_queue_size))
-	vprint('Read buffer: {:d}'.format(config.read_buffer))
-	vprint('Write buffer: {:d}'.format(config.write_buffer))
+	vprint('Read chunk size: {:d}'.format(config.read_chunk_size))
+	vprint('Write chunk size: {:d}'.format(config.write_chunk_size))
 
 	# TODO
 	IndexerConnector = DbConnector(db_connections[0]).db()
@@ -77,19 +101,21 @@ def main(script, *args, **kwargs):
 	if not PrimaryModel:
 		raise ConnectorError
 
+	# Connection to ElasticSearch (write)
+	# retry_time = 10
+	# timeout = 10
+	es_server = ES(server=config.es_connections, bulk_size=config.write_chunk_size)
+
 	indexer = Indexer(PrimaryModel, limit=config.limit)
 
-	es_server = ES(server=config.es_connections, bulk_size=config.write_buffer)
-
-	indexer.consume(
+	indexer.index(
 		start_time,
 		str(1),
 		db_connections_queue,
 		es_server,
 		config.es_index,
 		config.es_type,
-		config.read_buffer,
-		config.write_buffer)
+		config.read_chunk_size)
 
 	vprint('Refreshing index...')
 	# es_server.refresh()

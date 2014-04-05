@@ -24,8 +24,7 @@ class BaseIndexer(object):
 		index_buffer: Buffer filled of items to be indexed.
 		index_count (int): Number of indexed items.
 		index_total (int): Number of elements to index.
-		read_buffer_size (int): Size of the read chunk used when reading the buffer.
-		write_buffer_size (int): Size of the write chunk used when indexing the documents.
+		read_chunk_size (int): Size of the read chunk used when reading from the buffer.
 		buffer_empty (bool): Whether the buffer is empty.
 		lock (threading.Lock: Internal threading lock.
 	"""
@@ -36,8 +35,7 @@ class BaseIndexer(object):
 	index_count = 0
 	index_total = 0
 	buffer_empty = False
-	read_buffer_size = 10
-	write_buffer_size = 1000
+	read_chunk_size = 10
 	_lock = threading.Lock()
 
 	def __init__(self, model, limit=None):
@@ -78,8 +76,7 @@ class BaseIndexer(object):
 		es_server,
 		es_index,
 		es_type,
-		read_buffer_size,
-		write_buffer_size):
+		read_chunk_size):
 		"""Indexes the buffered items.
 
 		Retrieves data from models an its associations.
@@ -93,7 +90,7 @@ class BaseIndexer(object):
 			es_server (string): Elasticsearch server.
 			es_index (string): Elasticsearch index.
 			es_type (string): Elasticsearch type.
-			read_buffer_size (integer): Number of objects to accumulate before indexing.
+			read_chunk_size (integer): Number of objects to accumulate before indexing.
 			write_buffer_size (integer): Number of objects to accumulate for each indexing chunk.
 		"""
 		raise NotImplementedError()

@@ -75,14 +75,14 @@ class Config:
 			type = int,
 			choices = range(1, 17),
 			help = 'Number of threads to deploy.')
-		parser.add_argument('-r', '--read-buffer',
+		parser.add_argument('-r', '--read-chunk-size',
 			type = int,
-			dest = 'read_buffer',
-			help = 'Size if the buffer used to read from the MySQL databases.')
-		parser.add_argument('-w', '--write-buffer',
+			dest = 'read_chunk_size',
+			help = 'Size of the read chunk used when reading from the buffer.')
+		parser.add_argument('-w', '--write-chunk-size',
 			type = int,
-			dest = 'write_buffer',
-			help = 'Size of the buffer used to write to the ElasticSearch servers.')
+			dest = 'write_chunk_size',
+			help = 'Size of the write chunk used when indexing the documents.')
 		parser.add_argument('-l', '--limit',
 			type = int,
 			help = 'Limit the number of documents to index.')
@@ -145,12 +145,12 @@ class Config:
 			self.threads = args.threads
 
 		# read buffer size
-		if args.read_buffer is not None:
-			self.read_buffer = args.read_buffer
+		if args.read_chunk_size is not None:
+			self.read_chunk_size = args.read_chunk_size
 
 		# write buffer size
-		if args.write_buffer is not None:
-			self.write_buffer = args.write_buffer
+		if args.write_chunk_size is not None:
+			self.write_chunk_size = args.write_chunk_size
 
 		# documents limit
 		if args.limit is not None:
@@ -171,8 +171,8 @@ class Config:
 				'db_name': 'dmoz',
 				'db_queue_size': 4,
 				'threads': 16,
-				'read_buffer': 100,
-				'write_buffer': 1000,
+				'read_chunk_size': 100,
+				'write_chunk_size': 1000,
 				'limit': 2000,
 			}
 		else:
@@ -189,8 +189,8 @@ class Config:
 				'db_name': 'dmoz',
 				'db_queue_size': 4,
 				'threads': 16,
-				'read_buffer': 100,
-				'write_buffer': 1000,
+				'read_chunk_size': 100,
+				'write_chunk_size': 1000,
 				'limit': None,
 			}
 

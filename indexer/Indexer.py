@@ -46,16 +46,13 @@ class Indexer(BaseIndexer):
 		es_server,
 		es_index,
 		es_type,
-		read_buffer_size=None,
-		write_buffer_size=None):
+		read_chunk_size=None):
 		"""Indexes the buffered items."""
 
-		if read_buffer_size is None:
-			read_buffer_size = self.read_buffer_size
-		if write_buffer_size is None:
-			write_buffer_size = self.write_buffer_size
+		if read_chunk_size is None:
+			read_chunk_size = self.read_chunk_size
 
-		tprint(thread_name, 'Starting... ({:d} > {:d})'.format(read_buffer_size, write_buffer_size))
+		tprint(thread_name, 'Starting...')
 
 		# Sync threads
 		time.sleep(0.5)
@@ -72,7 +69,7 @@ class Indexer(BaseIndexer):
 
 				try:
 					self.lock.acquire()
-					for _ in itertools.repeat(None, read_buffer_size):
+					for _ in itertools.repeat(None, read_chunk_size):
 						model_ids.append(next(buffer)[0])
 				except StopIteration:
 					self.buffer_empty = True
