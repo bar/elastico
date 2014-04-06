@@ -11,7 +11,6 @@ __author__      = "Ber Clausen"
 __copyright__   = "Copyright 2014, Planet Earth"
 
 import time, os, signal, sys
-# , operator
 
 
 class ThreadWatcher:

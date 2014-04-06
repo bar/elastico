@@ -1,3 +1,3 @@
-__all__ = ['indexer']
+__all__ = ['index']
 
 print __all__

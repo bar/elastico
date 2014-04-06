@@ -137,21 +137,26 @@ def main(script, *args, **kwargs):
 		limit=config.limit)
 
 	# Start indexing
-	indexer.index(start_time, str(1), read_chunk_size=config.read_chunk_size)
+	if config.single_process_mode:
+		indexer.index(start_time, read_chunk_size=config.read_chunk_size)
+	else:
+		# Create new threads
+		for i in range(config.threads):
+				thread = Thread(
+					indexer.index,
+					start_time,
+					read_chunk_size=config.read_chunk_size,
+					autostart=config.autostart_threads)
+				threads.append(thread)
 
-	# Create new threads
-	# for i in range(config.threads):
-		# thread = Thread(indexer.index, (
-		# 	start_time,
-		# 	str(i+1),
-		# 	read_chunk_size=config.read_chunk_size)
-		# threads.append(thread)
+		# Starts threads, by calling run()
+		if not config.autostart_threads:
+			for thread in threads:
+				thread.start()
 
-	# for t in threads:
-	# 	t.start()
-
-	# for t in threads:
-	# 	t.join()
+		# Wait for threads to terminate
+		for thread in threads:
+			thread.join()
 
 	vprint('Refreshing index...')
 	# es_connector.refresh()
