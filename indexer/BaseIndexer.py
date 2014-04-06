@@ -11,11 +11,11 @@ from abc import ABCMeta, abstractmethod
 # Threading
 import threading
 
-# Thread control
-from utils import ThreadWatcher
-
 # Inflection
 import inflection
+
+# Thread control
+from utils import ThreadWatcher
 
 
 class BaseIndexer(object):

@@ -1,19 +1,27 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""Indexer.py: Indexer."""
+"""Indexer.py: Indexer implementation."""
 
 __author__      = "Ber Clausen"
 __copyright__   = "Copyright 2014, Planet Earth"
 
 from BaseIndexer import BaseIndexer
-from sqlalchemy import func
+
+import itertools # iterate faster
+import time
 
 # Threading
 import threading
 
-import itertools # iterate faster
-import time
+# SQLAlchemy
+import sqlalchemy
+
+# Errors
+from utils.errors import (
+	BadConfigError,
+	ConnectorError
+)
 
 # Utility functions
 from utils.utils import vprint, tprint

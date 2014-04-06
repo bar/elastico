@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""Config.py: App configuration."""
+"""Config.py: App configurator."""
 
 __author__      = "Ber Clausen"
 __copyright__   = "Copyright 2014, Planet Earth"
@@ -33,11 +33,10 @@ class Config:
 	write_chunk_size = None
 
 	def __init__(self):
-		# global args
 		args = self.parse_args()
 		self.set_verbose(args.verbose)
 		self.set_args(args)
-		# self.print_info()
+		self.print_info()
 
 	def convert_arg_line_to_args(self, arg_line):
 		"""Fancy parsing.

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""Thread.py: Thread wrapper.
+"""Thread.py: Custom Thread implementation.
 
 http://code.activestate.com/recipes/496735/
 https://tinyos-main.googlecode.com/svn/trunk/support/sdk/python/tinyos/utils/Watcher.py

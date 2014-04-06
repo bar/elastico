@@ -1,15 +1,22 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-"""index.py: Index MySQL information inside Elasticsearch."""
+"""index.py: Index MySQL data as Elasticsearch documents."""
 
 __author__      = "Ber Clausen"
 __copyright__   = "Copyright 2014, Planet Earth"
 
-# main
 import time, sys
 from Queue import Queue
-from pyes import ES # Elasticsearch connector
+
+# Errors
+from utils.errors import (
+	BadConfigError,
+	ConnectorError
+)
+
+# Elasticsearch connector
+import pyes
 
 # Utility functions
 from utils.utils import vprint
@@ -20,12 +27,6 @@ from utils.utils import vprint
 # from threading import Lock
 # import itertools # iterate faster
 # import time
-
-# Errors
-from utils.errors import (
-	BadConfigError,
-	ConnectorError
-)
 
 # Config
 from config.Config import Config
@@ -117,12 +118,8 @@ def main(script, *args, **kwargs):
 		read_queue.put(db_connector)
 		db_connections.append(db_connection)
 
-	config.print_info()
-
-	db_connector = DbConnector(db_connections.pop(0)).build(source_table, source_relationships)
-
-	# Elasticsearch connector (write)
-	es_connector = ES(server=config.es_connections, bulk_size=config.write_chunk_size)
+	# Elasticsearch connector
+	es_connector = pyes.ES(server=config.es_connections, bulk_size=config.write_chunk_size)
 
 	# Create index if necessary
 	# es_connector.indices.create_index_if_missing(config.es_index)
