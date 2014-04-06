@@ -67,29 +67,29 @@ def main(script, *args, **kwargs):
 		# 	'SymbolicCategories'
 		# 		# 'through' => 'Symbolics'
 		},
-		'adjacency_list': {
+		'self_referencial': {
 			'parent_category': {
 				'foreign_key': 'parent_id',
 				'backref': 'child_categories'
 			},
 		}
 	}
-	source_table = 'external_pages'
-	source_relationships = {
-		'one_to_many': {
-		},
-		'many_to_one': {
-			'categories': {
-				'foreign_key': 'category_id'
-			}
-		},
-		'one_to_one': {
-		},
-		'many_to_many': {
-		},
-		'adjacency_list': {
-		}
-	}
+	# source_table = 'external_pages'
+	# source_relationships = {
+	# 	'one_to_many': {
+	# 	},
+	# 	'many_to_one': {
+	# 		'categories': {
+	# 			'foreign_key': 'category_id'
+	# 		}
+	# 	},
+	# 	'one_to_one': {
+	# 	},
+	# 	'many_to_many': {
+	# 	},
+	# 	'self_referencial': {
+	# 	}
+	# }
 	document_map = {
 		'Category': 'categories',
 		'ExternalPages': 'external_pages',

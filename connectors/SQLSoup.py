@@ -226,8 +226,8 @@ class Connector(object):
 			for relationship_name, relationship in relationships['one_to_one'].iteritems():
 				pass
 
-		if 'adjacency_list' in relationships:
-			for relationship_name, relationship in relationships['adjacency_list'].iteritems():
+		if 'self_referencial' in relationships:
+			for relationship_name, relationship in relationships['self_referencial'].iteritems():
 				backref = relationship['backref'] if 'backref' in relationship else None
 				foreign_key = self.field(source_model, relationship['foreign_key'])
 
