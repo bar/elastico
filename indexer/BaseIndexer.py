@@ -79,7 +79,7 @@ class BaseIndexer(object):
 		ThreadWatcher.ThreadWatcher()
 
 	def document_map(self, db_connector):
-		"""Maps the models to the document structure.
+		"""Builds the mapping between the models and the document structure.
 
 		If no document map is set, one will be created using the model information.
 

@@ -74,7 +74,7 @@ class Connector(object):
 		"""Gets a field from a mapped model.
 
 		Args:
-			model: Mapped model
+			model: Mapped model.
 			field_name (string): Mapped field
 
 		Returns:
@@ -92,15 +92,37 @@ class Connector(object):
 
 		return model._table.fullname
 
-	@staticmethod
-	def map(model, mapping):
+	def map(self, mapping):
+		"""Builds a dict containing the mapping structure.
+
+		Args:
+			document_map (dict): Dict used for mapping the models to the document structure.
+
+		Returns:
+			Dictionary containing the mapping structure.
+		"""
 		mapped_model = {}
 		for model_alias, table_name in mapping.iteritems():
 			try:
-				mapped_model[model_alias] = model._connector.model(table_name)
+				mapped_model[model_alias] = self.model(table_name)
 			except sqlalchemy.exc.NoSuchTableError:
 				continue
+
 		return mapped_model
+
+	def model(self, table_name):
+		"""Gets a Mapped object based on an existing table.
+
+		Args:
+			table_name (string): Model name.
+
+		Returns:
+			Mapped model.
+		"""
+		if not self.is_database(self._db):
+			raise BadConfigError('No database connector configured.')
+
+		return self._db.entity(table_name)
 
 	def db(self, session=True, db_charset='utf8'):
 		"""Construct the db object used to access the database.
@@ -120,7 +142,6 @@ class Connector(object):
 		Returns:
 			sqlsoup.SQLSoup object.
 		"""
-
 		if self._url is None:
 			raise BadConfigError('No engine URL configured.')
 
@@ -166,7 +187,6 @@ class Connector(object):
 		TODO:
 			Maybe later read from config models and its relations.
 		"""
-
 		self._model = source_model = self.model(source_table)
 
 		if relationships is False:
@@ -220,18 +240,3 @@ class Connector(object):
 					backref=backref)
 
 		return self
-
-	@staticmethod
-	def model(db, table_name):
-		"""Gets a Mapped object based on an existing table.
-
-		Args:
-			table_name (string): Model name.
-
-		Returns:
-			Mapped model if exists, None otherwise.
-		"""
-		if not Connector.is_database(self._db):
-			raise BadConfigError('No database connector configured.')
-
-		return db.entity(table_name)

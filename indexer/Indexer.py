@@ -85,13 +85,15 @@ class Indexer(BaseIndexer):
 				finally:
 					self._lock.release()
 
-				model = read_queue.get(True)
+				db_connector = read_queue.get(True)
+
+				model = db_connector._model
 
 				documents = []
 				for filtered_model in model.filter(model.id.in_(model_ids)):
-					documents.append((filtered_model.id, self.build_document(filtered_model)))
+					documents.append((filtered_model.id, self.build_document(db_connector)))
 				#model.session.close()
-				read_queue.put(model)
+				read_queue.put(db_connector)
 
 				for document in documents:
 					print document
@@ -115,8 +117,16 @@ class Indexer(BaseIndexer):
 
 		tprint(thread_name, 'Ending... I\'m dead')
 
-	def build_document(self, model):
-		mapped_model = model._connector.map(model,self._document_map)
+	def build_document(self, db_connector):
+		"""Builds a dict containing the mapping structure for the document.
+
+		Args:
+			db_connector: Database connector.
+
+		Returns:
+			Dictionary containing the mapping structure.
+		"""
+		mapped_model = db_connector.map(self._document_map)
 
 		return mapped_model
 
