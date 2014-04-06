@@ -9,12 +9,6 @@ __copyright__   = "Copyright 2014, Planet Earth"
 import time, sys
 from Queue import Queue
 
-# Errors
-from utils.errors import (
-	BadConfigError,
-	ConnectorError
-)
-
 # Elasticsearch connector
 import pyes
 

@@ -36,6 +36,10 @@ class Config:
 		args = self.parse_args()
 		self.set_verbose(args.verbose)
 		self.set_args(args)
+
+		if self.db_connections in [[], None] or self.es_connections in [[], None]:
+			raise BadConfigError
+
 		self.print_info()
 
 	def convert_arg_line_to_args(self, arg_line):
