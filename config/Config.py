@@ -26,7 +26,9 @@ class Config:
 	es_type = None
 	limit = None
 	read_chunk_size = None
+	single_process_mode = None
 	threads = None
+	autostart_threads = None
 	verbose = None
 	write_chunk_size = None
 
@@ -84,10 +86,18 @@ class Config:
 		parser.add_argument('-y', '--es-type',
 			dest = 'es_type',
 			help = 'ElasticSearch type.')
+		parser.add_argument('-s', '--single-process-mode',
+			dest = 'single_process_mode',
+			action = 'store_true',
+			help = 'Whether the program should run in single process mode.')
 		parser.add_argument('-t', '--threads',
 			type = int,
 			choices = range(1, 17),
 			help = 'Number of threads to deploy.')
+		parser.add_argument('-a', '--autostart-threads',
+			dest = 'autostart_threads',
+			action = 'store_true',
+			help = 'Whether the threads should be run immediately after created or synched.')
 		parser.add_argument('-r', '--read-chunk-size',
 			type = int,
 			dest = 'read_chunk_size',
@@ -113,27 +123,27 @@ class Config:
 		for k, v in self.load(args.development).items():
 			setattr(self, k, v)
 
-		# verbose
+		# Verbose mode
 		if args.verbose is not None:
 			self.verbose = args.verbose
 
-		# elasticsearch connections
+		# Elasticsearch connections
 		if args.es_connections is not None:
 			self.es_connections = self.readEsConnections('es', args.es_connections)
 
-		# elasticsearch index name
+		# Elasticsearch index name
 		if args.es_index is not None:
 			self.es_index = args.es_index
 
-		# elasticsearch index type
+		# Elasticsearch index type
 		if args.es_type is not None:
 			self.es_type = args.es_type
 
-		# database name
+		# Database name
 		if args.db_name is not None:
 			self.db_name = args.db_name
 
-		# database connections
+		# Database connections
 		if args.db_connections is not None:
 			self.db_connections = self.readConnections('db', args.db_connections)
 		else:
@@ -143,23 +153,29 @@ class Config:
 		for db_connection in self.db_connections:
 			db_connection.insert(0, self.db_name)
 
-		# databases queue size
+		# Databases queue size
 		if args.db_queue_size is not None:
 			self.db_queue_size = args.db_queue_size
 
-		# threads
+		# Single process mode
+		if args.single_process_mode is not None:
+			self.single_process_mode = args.single_process_mode
+
+		# Threads
 		if args.threads is not None:
 			self.threads = args.threads
+		if args.autostart_threads is not None:
+			self.autostart_threads = args.autostart_threads
 
-		# read buffer size
+		# Read buffer size
 		if args.read_chunk_size is not None:
 			self.read_chunk_size = args.read_chunk_size
 
-		# write buffer size
+		# Write buffer size
 		if args.write_chunk_size is not None:
 			self.write_chunk_size = args.write_chunk_size
 
-		# documents limit
+		# Documents limit
 		if args.limit is not None:
 			self.limit = args.limit
 
@@ -232,9 +248,14 @@ class Config:
 	def print_info(self):
 		# Utility functions
 		from utils.utils import vprint
+		process_mode = 'Single process' if self.single_process_mode else 'Multi threaded'
+		vprint('Process mode: {:s}'.format(process_mode))
+
+		if not self.single_process_mode:
+			vprint('Threads: {:d}'.format(self.threads))
+
 		vprint('Index: {:s}'.format(self.es_index))
 		vprint('Type: {:s}'.format(self.es_type))
-		vprint('Threads: {:d}'.format(self.threads))
 		vprint('DB Queue size: {:d}'.format(self.db_queue_size))
 		vprint('Read chunk size: {:d}'.format(self.read_chunk_size))
 		vprint('Write chunk size: {:d}'.format(self.write_chunk_size))
