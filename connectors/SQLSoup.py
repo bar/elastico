@@ -116,18 +116,52 @@ class Connector(object):
 		db = self._db
 
 		if 'one_to_many' in relationships:
-			for relationship_table, relationship in relationships['one_to_many'].iteritems():
+			for relationship_name, relationship in relationships['one_to_many'].iteritems():
+				relationship_table = relationship['table'] if 'table' in relationship else relationship_name
 				related_model = self.model(self._db, relationship_table)
 				foreign_key = self.field(related_model, relationship['foreign_key'])
+
 				source_model.relate(
-					relationship_table,
-					#relationship['name'],
+					relationship_name,
 					related_model,
 					foreign_keys=foreign_key,
 					primaryjoin=(foreign_key == source_model.id),
 					backref=source_table)
-					# backref=source_name)
-		# import ipdb; ipdb.set_trace()
+
+		if 'many_to_one' in relationships:
+			for relationship_name, relationship in relationships['many_to_one'].iteritems():
+				relationship_table = relationship['table'] if 'table' in relationship else relationship_name
+				related_model = self.model(self._db, relationship_table)
+				foreign_key = self.field(source_model, relationship['foreign_key'])
+
+				related_model.relate(
+					relationship_name,
+					source_model,
+					foreign_keys=foreign_key,
+					primaryjoin=(foreign_key == related_model.id),
+					backref=relationship_table)
+
+		if 'many_to_many' in relationships:
+			for relationship_name, relationship in relationships['many_to_many'].iteritems():
+				pass
+
+		if 'one_to_one' in relationships:
+			for relationship_name, relationship in relationships['one_to_one'].iteritems():
+				pass
+
+		if 'adjacency_list' in relationships:
+			for relationship_name, relationship in relationships['adjacency_list'].iteritems():
+				backref = relationship['backref'] if 'backref' in relationship else None
+				foreign_key = self.field(source_model, relationship['foreign_key'])
+
+				source_model.relate(
+					relationship_name,
+					source_model,
+					foreign_keys=foreign_key,
+					primaryjoin=(foreign_key == source_model.id),
+					remote_side=source_model.id,
+					backref=backref)
+
 		return self
 
 	@staticmethod
