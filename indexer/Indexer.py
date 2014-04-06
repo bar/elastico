@@ -23,8 +23,15 @@ class Indexer(BaseIndexer):
 	# 	super(Indexer, self).__init__(model, limit)
 
 	def fill_buffer(self, model, limit=None):
-		"""Populates the buffer."""
-		where = True
+		"""Populates the buffer.
+
+		http://stackoverflow.com/questions/7389759/memory-efficient-built-in-sqlalchemy-iterator-generator
+		http://www.sqlalchemy.org/trac/wiki/UsageRecipes/WindowedRangeQuery
+
+		http://stackoverflow.com/questions/1078383/sqlalchemy-difference-between-query-and-query-all-in-for-loops
+		http://www.mail-archive.com/sqlalchemy@googlegroups.com/msg12443.html
+		http://stackoverflow.com/questions/1145905/scanning-huge-tables-with-sqlalchemy-using-the-orm
+		"""
 
 		total = model.session.query(func.count(model.id)).filter(where).scalar()
 		self.index_total = min(total, limit) if limit not in [None, 0] else total

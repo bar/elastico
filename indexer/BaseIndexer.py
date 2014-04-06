@@ -109,13 +109,6 @@ class BaseIndexer(object):
 
 		It handles the creation of the MySQL models that will be used as the source of information.
 
-		http://stackoverflow.com/questions/7389759/memory-efficient-built-in-sqlalchemy-iterator-generator
-		http://www.sqlalchemy.org/trac/wiki/UsageRecipes/WindowedRangeQuery
-
-		http://stackoverflow.com/questions/1078383/sqlalchemy-difference-between-query-and-query-all-in-for-loops
-		http://www.mail-archive.com/sqlalchemy@googlegroups.com/msg12443.html
-		http://stackoverflow.com/questions/1145905/scanning-huge-tables-with-sqlalchemy-using-the-orm
-
 		Args:
 			model: Model used as an entry point to populate the buffer and create the documents.
 			limit (int): Number of documents to index
@@ -128,7 +121,7 @@ class BaseIndexer(object):
 
 		Retrieves data from models an its associations.
 
-		It handles the creation of Elasticsearch documents, and the index process.
+		It handles the creation of Elasticsearch documents, and the indexing process.
 
 		Args:
 			start_time (float): Start time in seconds.
