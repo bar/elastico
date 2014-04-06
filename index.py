@@ -104,28 +104,22 @@ def main(script, *args, **kwargs):
 	# Threads list
 	threads = []
 
-	# Db models queue
+	# Db connector queue
 	read_queue = Queue()
 
 	# Db connections list
 	db_connections = config.db_connections
 
-	# Populte db models queue (round robin)
+	# Populte db connector queue (round robin)
 	for _ in range(config.db_queue_size):
 		db_connection = db_connections.pop(0)
-		model = DbConnector(db_connection).db().build(source_table, source_relationships)
-		read_queue.put(model)
+		db_connector = DbConnector(db_connection).build(source_table, source_relationships)
+		read_queue.put(db_connector)
 		db_connections.append(db_connection)
 
 	config.print_info()
 
-	# TODO
-	db_connector = DbConnector(db_connections[0]).db()
-
-	source_model =  db_connector.build(source_table, source_relationships)
-
-	if not source_model:
-		raise ConnectorError
+	db_connector = DbConnector(db_connections.pop(0)).build(source_table, source_relationships)
 
 	# Elasticsearch connector (write)
 	es_connector = ES(server=config.es_connections, bulk_size=config.write_chunk_size)
@@ -134,7 +128,7 @@ def main(script, *args, **kwargs):
 	# es_connector.indices.create_index_if_missing(config.es_index)
 
 	indexer = Indexer(
-		source_model,
+		db_connector=db_connector,
 		read_queue=read_queue,
 		es_connector=es_connector,
 		es_index=config.es_index,
@@ -145,7 +139,7 @@ def main(script, *args, **kwargs):
 	# Start indexing
 	indexer.index(start_time, str(1), read_chunk_size=config.read_chunk_size)
 
-# 	# Create new threads
+	# Create new threads
 	# for i in range(config.threads):
 		# thread = Thread(indexer.index, (
 		# 	start_time,

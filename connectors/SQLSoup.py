@@ -25,22 +25,82 @@ class Connector(object):
 	"""Database connector.
 
 	Used as the MySQL repository connector.
-
-	Attributes:
-		url (string): Engine url
 	"""
 
 	_db = None
+	_model = None
+	_url = None
 
-	url = None
-
-	def __init__(self, connection, engine='mysql'):
+	def __init__(self, connection, engine='mysql', session=True, db_charset='utf8'):
 		"""Conenctor initialization."""
 		try:
 			name, hostname, username, password = connection
 		except ValueError:
 			raise BadConfigError
-		self.url = '{:s}://{:s}:{:s}@{:s}/{:s}'.format(engine, username, password, hostname, name)
+
+		self._url = '{:s}://{:s}:{:s}@{:s}/{:s}'.format(engine, username, password, hostname, name)
+		self.db(session, db_charset)
+
+	@staticmethod
+	def is_database(object):
+		"""Test if an object is an sqlsoup.SQLSoup database.
+
+		Args:
+			object: Object to test.
+
+		Returns:
+			Boolean.
+		"""
+		return isinstance(object, sqlsoup.SQLSoup)
+
+	@staticmethod
+	def is_model(object):
+		"""Test if an object is a mapped model.
+
+		The object represents a SQLSoup mapping to a `sqlalchemy.schema.Table` construct.
+
+		If already queried, the type of the object will hold the same value.
+
+		Args:
+			object: Object to test.
+
+		Returns:
+			Boolean.
+		"""
+		return isinstance(object, sqlsoup.TableClassType) or isinstance(type(object), sqlsoup.TableClassType)
+
+	@staticmethod
+	def field(model, field_name):
+		"""Gets a field from a mapped model.
+
+		Args:
+			model: Mapped model
+			field_name (string): Mapped field
+
+		Returns:
+			Mapped object if exists, None otherwise.
+		"""
+		if not Connector.is_model(model):
+			raise ConnectorError('No model found.')
+
+		return getattr(model, field_name, None)
+
+	@staticmethod
+	def table_name(model):
+		if not Connector.is_model(model):
+			raise ConnectorError('No model found.')
+
+		return model._table.fullname
+
+	@staticmethod
+	def map(model, mapping):
+		mapped_model = {}
+		for model_alias, table_name in mapping.iteritems():
+			try:
+				mapped_model[model_alias] = model._connector.model(table_name)
+			except sqlalchemy.exc.NoSuchTableError:
+				continue
+		return mapped_model
 
 	def db(self, session=True, db_charset='utf8'):
 		"""Construct the db object used to access the database.
@@ -61,10 +121,10 @@ class Connector(object):
 			sqlsoup.SQLSoup object.
 		"""
 
-		if self.url is None:
+		if self._url is None:
 			raise BadConfigError('No engine URL configured.')
 
-		engine = '%s?charset=%s' % (self.url, db_charset)
+		engine = '%s?charset=%s' % (self._url, db_charset)
 
 		if session is True:
 			session = self.session()
@@ -74,7 +134,7 @@ class Connector(object):
 		return self
 
 	def session(self):
-		"""Connector custom session registry.
+		"""Custom session registry.
 
 		Returns:
 			sqlalchemy.orm.scoping.scoped_session
@@ -91,6 +151,7 @@ class Connector(object):
 	def build(self, source_table, relationships=False):
 		"""Returns the constructed model.
 
+		Set an object parameter with the connector used to construct it.
 		Bind relationships.
 
 		http://docs.sqlalchemy.org/en/latest/orm/relationships.html#adjacency-list-relationships
@@ -106,19 +167,15 @@ class Connector(object):
 			Maybe later read from config models and its relations.
 		"""
 
-		source_model = Connector.model(self._db, source_table)
+		self._model = source_model = self.model(source_table)
 
 		if relationships is False:
-			return source_model
-
-		if not self.is_database(self._db):
-			raise BadConfigError('No database connector configured.')
-		db = self._db
+			return self
 
 		if 'one_to_many' in relationships:
 			for relationship_name, relationship in relationships['one_to_many'].iteritems():
 				relationship_table = relationship['table'] if 'table' in relationship else relationship_name
-				related_model = self.model(self._db, relationship_table)
+				related_model = self.model(relationship_table)
 				foreign_key = self.field(related_model, relationship['foreign_key'])
 
 				source_model.relate(
@@ -131,7 +188,7 @@ class Connector(object):
 		if 'many_to_one' in relationships:
 			for relationship_name, relationship in relationships['many_to_one'].iteritems():
 				relationship_table = relationship['table'] if 'table' in relationship else relationship_name
-				related_model = self.model(self._db, relationship_table)
+				related_model = self.model(relationship_table)
 				foreign_key = self.field(source_model, relationship['foreign_key'])
 
 				related_model.relate(
@@ -165,30 +222,6 @@ class Connector(object):
 		return self
 
 	@staticmethod
-	def is_database(object):
-		"""Test if an object is an sqlsoup.SQLSoup database.
-
-		Args:
-			object: Object to test.
-
-		Returns:
-			Boolean.
-		"""
-		return isinstance(object, sqlsoup.SQLSoup)
-
-	@staticmethod
-	def is_model(object):
-		"""Test if an object is a mapped model.
-
-		Args:
-			object: Object to test.
-
-		Returns:
-			Boolean.
-		"""
-		return isinstance(object, sqlsoup.TableClassType)
-
-	@staticmethod
 	def model(db, table_name):
 		"""Gets a Mapped object based on an existing table.
 
@@ -198,23 +231,7 @@ class Connector(object):
 		Returns:
 			Mapped model if exists, None otherwise.
 		"""
-		if not Connector.is_database(db):
+		if not Connector.is_database(self._db):
 			raise BadConfigError('No database connector configured.')
 
 		return db.entity(table_name)
-
-	@staticmethod
-	def field(model, field_name):
-		"""Gets a field from a mapped model.
-
-		Args:
-			model: Mapped model
-			field_name (string): Mapped field
-
-		Returns:
-			Mapped object if exists, None otherwise.
-		"""
-		if not Connector.is_model(model):
-			raise ConnectorError('No database connector configured.')
-
-		return getattr(model, field_name, None)
