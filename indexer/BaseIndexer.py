@@ -81,6 +81,12 @@ class BaseIndexer(object):
 	def _document_map(self, model, document_map):
 		"""Maps the models to the document structure.
 
+		If no document map is set, one will be created using the model information.
+
+		{
+			'CamelCaseModel': 'table_name'
+		}
+
 		Args:
 			model: Model used as an entry point to populate the buffer and create the documents.
 			document_map (dict): Dict used for mapping the models to the document structure.

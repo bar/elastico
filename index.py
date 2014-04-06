@@ -128,9 +128,10 @@ def main(script, *args, **kwargs):
 		raise ConnectorError
 
 	# Elasticsearch connector (write)
-	# retry_time = 10
-	# timeout = 10
 	es_connector = ES(server=config.es_connections, bulk_size=config.write_chunk_size)
+
+	# Create index if necessary
+	# es_connector.indices.create_index_if_missing(config.es_index)
 
 	indexer = Indexer(
 		source_model,
@@ -141,9 +142,7 @@ def main(script, *args, **kwargs):
 		document_map=document_map,
 		limit=config.limit)
 
-	# Create index if necessary
-	# es_connector.indices.create_index_if_missing(config.es_index)
-
+	# Start indexing
 	indexer.index(start_time, str(1), read_chunk_size=config.read_chunk_size)
 
 # 	# Create new threads
@@ -151,8 +150,6 @@ def main(script, *args, **kwargs):
 		# thread = Thread(indexer.index, (
 		# 	start_time,
 		# 	str(i+1),
-		# 	config.es_index,
-		# 	config.es_type,
 		# 	read_chunk_size=config.read_chunk_size)
 		# threads.append(thread)
 
