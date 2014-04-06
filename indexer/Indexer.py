@@ -9,6 +9,9 @@ __copyright__   = "Copyright 2014, Planet Earth"
 from BaseIndexer import BaseIndexer
 from sqlalchemy import func
 
+# Threading
+import threading
+
 import itertools # iterate faster
 import time
 
@@ -46,13 +49,15 @@ class Indexer(BaseIndexer):
 
 		vprint('Buffer populated.')
 
-	def index(self, start_time, thread_name, read_chunk_size=None):
+	def index(self, start_time=time.time(), read_chunk_size=None):
 		"""Indexes the buffered items."""
+
+		process_name = threading.current_thread().getName()
 
 		if read_chunk_size is None:
 			read_chunk_size = self.read_chunk_size
 
-		tprint(thread_name, 'Starting...')
+		tprint(process_name, 'Starting...')
 
 		# Sync threads
 		time.sleep(0.5)
@@ -78,10 +83,10 @@ class Indexer(BaseIndexer):
 						model_ids.append(next(buffer)[0])
 				except StopIteration:
 					self.buffer_empty = True
-					tprint(thread_name, '## Empty buffer... ##')
+					tprint(process_name, 'Empty buffer...')
 					if len(model_ids) == 0:
 						break
-					tprint(thread_name, 'Dying...')
+					tprint(process_name, '... terminating')
 				finally:
 					self._lock.release()
 
@@ -102,7 +107,7 @@ class Indexer(BaseIndexer):
 				count = self.index_count = self.index_count + len(model_ids)
 
 				if count % 10 == 0:
-					tprint(thread_name, '{:d}/{:d} ({:.2%}) {{{:f}}}'.format(count, total, float(count) / total, time.time() - start_time), 1)
+					tprint(process_name, '{:d}/{:d} ({:.2%}) {{{:f}}}'.format(count, total, float(count) / total, time.time() - start_time), 1)
 
 				if count % 1000 == 0:
 					pass
@@ -115,7 +120,7 @@ class Indexer(BaseIndexer):
 		except (KeyboardInterrupt, SystemExit):
 			exit(0)
 
-		tprint(thread_name, 'Ending... I\'m dead')
+		tprint(process_name, 'I\'m dead!')
 
 	def build_document(self, db_connector):
 		"""Builds a dict containing the mapping structure for the document.

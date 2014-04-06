@@ -109,7 +109,7 @@ class BaseIndexer(object):
 		raise NotImplementedError()
 
 	@abstractmethod
-	def index(self, start_time, thread_name, read_chunk_size):
+	def index(self, start_time, read_chunk_size):
 		"""Indexes the buffered items.
 
 		Retrieves data from models an its associations.
@@ -118,7 +118,6 @@ class BaseIndexer(object):
 
 		Args:
 			start_time (float): Start time in seconds.
-			thread_name (string): Thread name
 			read_chunk_size (integer): Number of objects to accumulate before indexing.
 		"""
 		raise NotImplementedError()
