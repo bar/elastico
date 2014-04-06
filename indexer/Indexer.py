@@ -126,24 +126,24 @@ class Indexer(BaseIndexer):
 		Returns:
 			Dictionary containing the mapping structure.
 		"""
-		mapped_model = db_connector.map(self._document_map)
+		document_map = db_connector.map(self._document_map)
 
-		return mapped_model
+		return document_map
 
-		return self.translate_mapped(mapped_model)
+		return self.translate_document_map(document_map)
 
-	def translate_mapped(self, mapped_model):
+	def translate_document_map(self, document_map):
 		"""Converts to dict all members of dict of mapped objects.
 
 		Args:
-			mapped_model: Dict with mapped object as its values.
+			document_map: Dict with mapped object as its values.
 
 		Returns:
 			Dict with mapped values converted.
 		"""
 		model = {}
-		for key in mapped_model:
-			model[key] = self.mappedToModel(mapped_model[key])
+		for key in document_map:
+			model[key] = self.mappedToModel(document_map[key])
 
 		return model
 
