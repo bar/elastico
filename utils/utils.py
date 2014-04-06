@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from __future__ import print_function # http://stackoverflow.com/questions/5980042/how-to-implement-the-verbose-or-v-option-into-a-python-script
+# http://stackoverflow.com/questions/5980042/how-to-implement-the-verbose-or-v-option-into-a-python-script
+from __future__ import print_function
 
 """utils.py: Just a bunch of utility functions."""
 

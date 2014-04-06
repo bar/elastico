@@ -18,11 +18,24 @@ class Config:
 	Used to easy bootstrapping.
 	"""
 
+	db_name = None
+	db_connections = None
+	db_queue_size = None
+	es_connections = None
+	es_index = None
+	es_type = None
+	limit = None
+	read_chunk_size = None
+	threads = None
+	verbose = None
+	write_chunk_size = None
+
 	def __init__(self):
 		# global args
 		args = self.parse_args()
 		self.set_verbose(args.verbose)
 		self.set_args(args)
+		# self.print_info()
 
 	def convert_arg_line_to_args(self, arg_line):
 		"""Fancy parsing.
@@ -99,8 +112,6 @@ class Config:
 		"""Set arguments."""
 		for k, v in self.load(args.development).items():
 			setattr(self, k, v)
-		# prefix
-		# self.prefix = args.prefix
 
 		# verbose
 		if args.verbose is not None:
@@ -113,8 +124,6 @@ class Config:
 		# elasticsearch index name
 		if args.es_index is not None:
 			self.es_index = args.es_index
-		# else:
-		# 	self.es_index = self.es_index.format(args.prefix)
 
 		# elasticsearch index type
 		if args.es_type is not None:
@@ -123,8 +132,6 @@ class Config:
 		# database name
 		if args.db_name is not None:
 			self.db_name = args.db_name
-		# else:
-		# 	self.db_name = self.db_name.format(args.prefix)
 
 		# database connections
 		if args.db_connections is not None:
@@ -221,3 +228,13 @@ class Config:
 		"""Read connection configuration for MySQL"""
 		connection = (schema, hostname, port) = line
 		return connection
+
+	def print_info(self):
+		# Utility functions
+		from utils.utils import vprint
+		vprint('Index: {:s}'.format(self.es_index))
+		vprint('Type: {:s}'.format(self.es_type))
+		vprint('Threads: {:d}'.format(self.threads))
+		vprint('DB Queue size: {:d}'.format(self.db_queue_size))
+		vprint('Read chunk size: {:d}'.format(self.read_chunk_size))
+		vprint('Write chunk size: {:d}'.format(self.write_chunk_size))

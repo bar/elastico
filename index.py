@@ -113,12 +113,7 @@ def main(script, *args, **kwargs):
 		read_queue.put(model)
 		db_connections.append(db_connection)
 
-	vprint('Index: {:s}'.format(config.es_index))
-	vprint('Type: {:s}'.format(config.es_type))
-	vprint('Threads: {:d}'.format(config.threads))
-	vprint('DB Queue size: {:d}'.format(config.db_queue_size))
-	vprint('Read chunk size: {:d}'.format(config.read_chunk_size))
-	vprint('Write chunk size: {:d}'.format(config.write_chunk_size))
+	config.print_info()
 
 	# TODO
 	db_connector = DbConnector(db_connections[0]).db()
