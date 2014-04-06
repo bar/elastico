@@ -95,7 +95,11 @@ def main(script, *args, **kwargs):
 		'adjacency_list': {
 		}
 	}
-	# source_relationships = False
+	document_map = {
+		'Category': 'categories',
+		'ExternalPages': 'external_pages',
+		'AlternativeLanguages': 'alternative_languages',
+	}
 
 	# Threads list
 	threads = []
@@ -123,36 +127,33 @@ def main(script, *args, **kwargs):
 	if not source_model:
 		raise ConnectorError
 
-	# import ipdb; ipdb.set_trace()
-	indexer = Indexer(source_model, limit=config.limit)
-
 	# Elasticsearch connector (write)
 	# retry_time = 10
 	# timeout = 10
 	es_connector = ES(server=config.es_connections, bulk_size=config.write_chunk_size)
 
+	indexer = Indexer(
+		source_model,
+		read_queue=read_queue,
+		es_connector=es_connector,
+		es_index=config.es_index,
+		es_type=config.es_type,
+		document_map=document_map,
+		limit=config.limit)
+
 	# Create index if necessary
 	# es_connector.indices.create_index_if_missing(config.es_index)
 
-	indexer.index(
-		start_time,
-		str(1),
-		read_queue,
-		es_connector,
-		config.es_index,
-		config.es_type,
-		config.read_chunk_size)
+	indexer.index(start_time, str(1), read_chunk_size=config.read_chunk_size)
 
 # 	# Create new threads
 	# for i in range(config.threads):
 		# thread = Thread(indexer.index, (
 		# 	start_time,
 		# 	str(i+1),
-		# 	read_queue,
-		# 	es_connector,
 		# 	config.es_index,
 		# 	config.es_type,
-		# 	config.read_chunk_size)
+		# 	read_chunk_size=config.read_chunk_size)
 		# threads.append(thread)
 
 	# for t in threads:

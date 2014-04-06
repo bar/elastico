@@ -13,10 +13,7 @@ import itertools # iterate faster
 import time
 
 # Utility functions
-from utils.utils import vprint, tprint, uniqify
-
-# Inflection
-import inflection
+from utils.utils import vprint, tprint
 
 
 class Indexer(BaseIndexer):
@@ -42,14 +39,7 @@ class Indexer(BaseIndexer):
 
 		vprint('Buffer populated.')
 
-	def index(self,
-		start_time,
-		thread_name,
-		read_queue,
-		es_connector,
-		es_index,
-		es_type,
-		read_chunk_size=None):
+	def index(self, start_time, thread_name, read_chunk_size=None):
 		"""Indexes the buffered items."""
 
 		if read_chunk_size is None:
@@ -65,6 +55,11 @@ class Indexer(BaseIndexer):
 
 		# Number of elements to index
 		total = self.index_total
+
+		es_connector = self._es_connector
+		es_index = self._es_index
+		es_type = self._es_type
+		read_queue = self._read_queue
 
 		try:
 			while not self.buffer_empty:
@@ -83,18 +78,17 @@ class Indexer(BaseIndexer):
 				finally:
 					self._lock.release()
 
-				source_model = read_queue.get(True)
-				# import ipdb; ipdb.set_trace()
+				model = read_queue.get(True)
 
 				documents = []
-				for filtered_model in source_model.filter(source_model.id.in_(model_ids)):
+				for filtered_model in model.filter(model.id.in_(model_ids)):
 					documents.append((filtered_model.id, self.build_document(filtered_model)))
-				#source_model.session.close()
-				read_queue.put(source_model)
+				#model.session.close()
+				read_queue.put(model)
 
 				for document in documents:
 					print document
-					# es_connector.index(document[1], es_index, es_type, document[0], bulk = True)
+					# es_connector.index(document[1], es_index, es_type, document[0], bulk=True)
 
 				count = self.index_count = self.index_count + len(model_ids)
 
@@ -114,55 +108,9 @@ class Indexer(BaseIndexer):
 
 		tprint(thread_name, 'Ending... I\'m dead')
 
-	def build_document(self, source_model):
-		# one_to_many = self.one_to_many
-		# many_to_many = self.many_to_many
-		# one_to_one = self.one_to_one
-		# many_to_one = self.many_to_one
+	def build_document(self, model):
+		mapped_model = model._connector.map(model,self._document_map)
 
-		# return self
-
-		# translations here
-		# Tags = many_to_many(source_model, 'Tag')
-
-		# Categories = []
-		# for Tag in Tags:
-		# 	for Category in many_to_many(Tag, 'Category'):
-		# 		Categories.append(Category)
-		# Categories = uniqify(Categories)
-
-		# Zones = []
-		# Zone = many_to_one(source_model, 'Zone')
-		# while Zone:
-		# 	Zones.append(Zone)
-		# 	ParentZone = many_to_one(Zone, 'ParentZone')
-		# 	Zone = ParentZone
-		mapped_model = {
-			'Category': source_model,
-			'AlternativeLanguages': source_model.alternative_languages,
-			'NewsGroups': source_model.news_groups,
-			'ExternalPages': source_model.external_pages,
-		# 	'Element': source_model,
-
-		# 	# many_to_one
-		# 	#'User': many_to_one(source_model, 'User'),
-		# 	'Zone': Zones,
-		# 	'Product': many_to_one(source_model, 'Product'),
-		# 	#'Chain': many_to_one(source_model, 'Chain'),
-		# 	#'Campaign': self.many_to_one(source_model, 'Campaign'),
-
-		# 	# one_to_many
-		# 	#'Phone': one_to_many(source_model, 'Phone'),
-		# 	'Review': one_to_many(source_model, 'Review'),
-		# 	'Bookmark': one_to_many(source_model, 'Bookmark'),
-
-		# 	# habtm
-		# 	'Tag': Tags,
-		# 	'Category': Categories,
-		# 	'Ware': many_to_many(source_model, 'Ware'),
-		# 	'Brand': many_to_many(source_model, 'Brand'),
-		}
-		import ipdb; ipdb.set_trace()
 		return mapped_model
 
 		return self.translate_mapped(mapped_model)
