@@ -17,8 +17,11 @@ class Thread(threading.Thread):
 	"""This is a wrapper for threading.Thread that improves
 	the syntax for creating and starting threads.
 	"""
-	def __init__(self, target, *args):
-		if not isinstance(args, tuple):
-			args = (args,)
-		threading.Thread.__init__(self, target=target, args=args)
-		# self.start()
+	def __init__(self, target, *args, **kwargs):
+		if 'autostart' in kwargs:
+			autostart = kwargs['autostart']
+			del kwargs['autostart']
+
+		super(Thread, self).__init__(target=target, args=args, kwargs=kwargs)
+		if autostart:
+			self.start()
