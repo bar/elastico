@@ -48,37 +48,37 @@ class BaseIndexer(object):
 	read_chunk_size = 10
 
 	def __init__(self,
-		model,
+		db_connector,
+		read_queue,
 		es_connector,
 		es_index,
 		es_type,
-		read_queue=None,
 		document_map={},
 		limit=None):
 		"""Initialization.
 
 		Args:
-			model: Model used as an entry point to populate the buffer and create the documents.
+			db_connector: Database connector.
+			read_queue (queue.Queue): Queue filled with models to be indexed.
 			es_connector (string): Elasticsearch connector.
 			es_index (string): Elasticsearch index.
 			es_type (string): Elasticsearch type.
-			read_queue (queue.Queue): Queue filled with models to be indexed.
 			document_map (dict): Dict used for mapping the models to the document structure.
 			limit (int): Number of documents to index
 		"""
 
-		self.fill_buffer(model, limit)
+		self.fill_buffer(db_connector._model, limit)
 
-		self._document_map = self._document_map(model, document_map)
+		self._read_queue = read_queue
 		self._es_connector = es_connector
 		self._es_index = es_index
 		self._es_type = es_type
-		self._read_queue = read_queue
+		self._document_map = self.document_map(db_connector) if document_map in [None, {}] else document_map
 
 		# Threads manager
 		ThreadWatcher.ThreadWatcher()
 
-	def _document_map(self, model, document_map):
+	def document_map(self, db_connector):
 		"""Maps the models to the document structure.
 
 		If no document map is set, one will be created using the model information.
@@ -88,17 +88,10 @@ class BaseIndexer(object):
 		}
 
 		Args:
-			model: Model used as an entry point to populate the buffer and create the documents.
-			document_map (dict): Dict used for mapping the models to the document structure.
+			db_connector: Database connector.
 		"""
-		if document_map in [None, {}]:
-			table = model._connector.table_name(model)
-			map = {
-				inflection.camelize(table): table
-			}
-		else:
-			map = document_map
-		return map
+		table = db_connector.table_name(db_connector._model)
+		return {inflection.camelize(table): table}
 
 	@abstractmethod
 	def fill_buffer(self, model, limit):
