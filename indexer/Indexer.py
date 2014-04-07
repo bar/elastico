@@ -109,18 +109,17 @@ class Indexer(BaseIndexer):
 				read_queue.put(db_connector)
 
 				for document in documents:
-					import pprint
-					pprint.pprint(document)
-					# es_connector.index(document[1], es_index, es_type, document[0], bulk=True)
+					# import pprint
+					# pprint.pprint(document)
+					es_connector.index(document[1], es_index, es_type, document[0], bulk=True)
 
 				count = self.index_count = self.index_count + len(model_ids)
 
 				if count % 10 == 0:
-					tprint(process_name, '{:d}/{:d} ({:.2%}) {{{:f}}}'.format(count, total, float(count) / total, time.time() - start_time), 1)
+					tprint(process_name, '{:d}/{:d} ({:.2%}) {{{:f}}}'.format(count, total, float(count) / total, time.time() - start_time))
 
 				if count % 1000 == 0:
-					pass
-					# es_connector.refresh()
+					es_connector.indices.refresh()
 
 
 		except Exception, e:

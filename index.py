@@ -10,7 +10,7 @@ import time, sys
 from Queue import Queue
 
 # Elasticsearch connector
-import pyes
+from pyes import ES
 
 # Utility functions
 from utils.utils import vprint
@@ -109,7 +109,7 @@ def main(script, *args, **kwargs):
 		db_connections.append(db_connection)
 
 	# Elasticsearch connector
-	es_connector = pyes.ES(server=config.es_connections, bulk_size=config.write_chunk_size)
+	es_connector = ES(server=config.es_connections, bulk_size=config.write_chunk_size)
 
 	# Create index if necessary
 	es_connector.indices.create_index_if_missing(config.es_index)
@@ -146,7 +146,7 @@ def main(script, *args, **kwargs):
 			thread.join()
 
 	vprint('Refreshing index...')
-	# es_connector.refresh()
+	es_connector.indices.refresh()
 
 	vprint('Elapsed: {:f}'.format(time.time() - start_time))
 
