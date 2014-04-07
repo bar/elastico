@@ -103,13 +103,14 @@ class Indexer(BaseIndexer):
 				model = db_connector._model
 
 				documents = []
-				for filtered_model in model.filter(model.id.in_(model_ids)):
-					documents.append((filtered_model.id, self.build_document(db_connector)))
+				for mapped_model in model.filter(model.id.in_(model_ids)):
+					documents.append((mapped_model.id, self.build_document(db_connector, mapped_model)))
 				#model.session.close()
 				read_queue.put(db_connector)
 
 				for document in documents:
-					print document
+					import pprint
+					pprint.pprint(document)
 					# es_connector.index(document[1], es_index, es_type, document[0], bulk=True)
 
 				count = self.index_count = self.index_count + len(model_ids)
@@ -130,19 +131,17 @@ class Indexer(BaseIndexer):
 
 		tprint(process_name, 'I\'m dead!')
 
-	def build_document(self, db_connector):
+	def build_document(self, db_connector, mapped_model):
 		"""Builds a dict containing the mapping structure for the document.
 
 		Args:
 			db_connector: Database connector.
+			mapped_model: Model already mapped (filtered).
 
 		Returns:
 			Dictionary containing the mapping structure.
 		"""
-		document_map = db_connector.map(self._document_map)
-
-		return document_map
-
+		document_map = db_connector.map(mapped_model, self._document_map)
 		return self.translate_document_map(document_map)
 
 	def translate_document_map(self, document_map):
@@ -154,87 +153,30 @@ class Indexer(BaseIndexer):
 		Returns:
 			Dict with mapped values converted.
 		"""
-		model = {}
-		for key in document_map:
-			model[key] = self.mappedToModel(document_map[key])
+		return {k:self.mapped_to_document(v) for k,v in document_map.items()}
 
-		return model
-
-	def empty_schema(self, mapped_model):
-		"""Create an empty schema for the givven table.
+	def mapped_to_document(self, mapped_model):
+		"""Converts a Mapped model into a document.
 
 		Args:
 			mapped_model: Mapped model.
 
 		Returns:
-			A dict with {column_name: None}.
-		"""
-		try:
-			return {k:None for k in mapped_model.c.keys()}
-		except NoSuchTableError, e:
-			raise ConnectorError
-		# schema = {}
-		# try:
-		# 	for c in mapped_model.c.keys():
-		# 		schema[c] = None
-		# except NoSuchTableError, e:
-		# 	raise ConnectorError
-		# return schema
-
-	def _mapped_to_model(self, mapped_model):
-		""" Map an SqlSoup object to a CakePHP model.
-
-		:type Mapped: object
-		:param Mapped: Mapped object to convert.
-
-		:rtype: dict
-		:return: Mapped values converted to dict.
-		"""
-
-		if not isinstance(type(mapped_model), TableClassType):
-			return None
-
-		schema = self.empty_schema(mapped_model._table)
-		mappedObjectDict = mapped_model.__dict__
-
-		data = {}
-		for k in schema:
-			data[k] = mappedObjectDict[k]
-
-		return data
-
-	def mappedToModel(self, mapped_model):
-		""" Convert a Mapped object into a dict.
-
-		If Mapped has other maps inside, also converts them too.
-
+			Dict with mapped values converted.
 		:type Mapped: object
 		:param mapped_model: Mapped object to convert.
 
 		:rtype: list
 		:return: A list with dicts of converted mapped objects.
 		"""
+		if mapped_model is None:
+			return None
+
 		if isinstance(mapped_model, list):
-			model = []
+			models = []
 			for v in mapped_model:
-				_v = self._mapped_to_model(v)
-				if _v != None:
-					model.append(_v)
-			return model
+				models.append(self.mapped_to_document(v))
+			return models
 		else:
-			return self._mapped_to_model(mapped_model)
-
-	def translateModel(self, mapped_model):
-		""" Converts to dict all members of dict of mapped objects.
-
-		:type Mapped: dict
-		:param mapped_model: Dict with mapped object as its values.
-
-		:rtype: dict
-		:return: Dict with mapped values converted.
-		"""
-		model = {}
-		for key in mapped_model:
-			model[key] = self.mappedToModel(mapped_model[key])
-
-		return model
+			empty_schema = {k:None for k in mapped_model._table.c.keys()}
+			return {k:mapped_model.__dict__[k] for k in empty_schema}

@@ -41,7 +41,6 @@ def main(script, *args, **kwargs):
 	# Config options
 	config = Config()
 
-	# temporary MySQL settings
 	source_table = 'categories'
 	source_relationships = {
 		'one_to_many': {
@@ -113,7 +112,7 @@ def main(script, *args, **kwargs):
 	es_connector = pyes.ES(server=config.es_connections, bulk_size=config.write_chunk_size)
 
 	# Create index if necessary
-	# es_connector.indices.create_index_if_missing(config.es_index)
+	es_connector.indices.create_index_if_missing(config.es_index)
 
 	indexer = Indexer(
 		db_connector=db_connector,

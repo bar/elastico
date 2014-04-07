@@ -91,7 +91,7 @@ class BaseIndexer(object):
 			db_connector: Database connector.
 		"""
 		table = db_connector.table_name(db_connector._model)
-		return {inflection.camelize(table): table}
+		return {table: table}
 
 	@abstractmethod
 	def fill_buffer(self, model, limit):
