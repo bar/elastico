@@ -66,6 +66,7 @@ class Config:
 			action = 'count')
 		parser.add_argument('-d', '--development',
 			action = 'store_true',
+			default = None,
 			help = 'Development environment.')
 		parser.add_argument('-c', '--db-connections',
 			dest = 'db_connections',
@@ -92,6 +93,7 @@ class Config:
 		parser.add_argument('-s', '--single-process-mode',
 			dest = 'single_process_mode',
 			action = 'store_true',
+			default = None,
 			help = 'Whether the program should run in single process mode.')
 		parser.add_argument('-t', '--threads',
 			type = int,
@@ -187,7 +189,7 @@ class Config:
 			config = {
 				'verbose': 3,
 				'es_connections': [
-					('http', '192.168.0.1', '9200')
+					('http', '127.0.0.1', '9200')
 				],
 				'es_index': 'dmoz',
 				'es_type': 'category',
@@ -196,6 +198,7 @@ class Config:
 				],
 				'db_name': 'dmoz',
 				'db_queue_size': 4,
+				'single_process_mode': True,
 				'threads': 16,
 				'read_chunk_size': 100,
 				'write_chunk_size': 1000,
