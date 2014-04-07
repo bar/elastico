@@ -55,19 +55,13 @@ def main(script, *args, **kwargs):
 				'foreign_key': 'category_id'
 			}
 		},
-		'many_to_one': {
-		},
 		'one_to_one': {
 		},
-		'many_to_many': {
-		# 	'AliasedCategories'
-		# 		# 'through' => 'Aliases'
-		# 	'RelatedCategories'
-		# 		# 'through' => 'Relateds'
-		# 	'SymbolicCategories'
-		# 		# 'through' => 'Symbolics'
+		'many_to_one': {
 		},
-		'self_referencial': {
+		'many_to_many': {
+		},
+		'self_referential': {
 			'parent_category': {
 				'foreign_key': 'parent_id',
 				'backref': 'child_categories'
@@ -87,13 +81,16 @@ def main(script, *args, **kwargs):
 	# 	},
 	# 	'many_to_many': {
 	# 	},
-	# 	'self_referencial': {
+	# 	'self_referential': {
 	# 	}
 	# }
 	document_map = {
-		'Category': 'categories',
-		'ExternalPages': 'external_pages',
-		'AlternativeLanguages': 'alternative_languages',
+		'alternative_languages': 'alternative_languages',
+		'categories': 'categories',
+		'external_pages': 'external_pages',
+		'news_groups': 'news_groups',
+		'parent_category': 'parent_category',
+		'related_categories': 'related_categories',
 	}
 
 	# Threads list
