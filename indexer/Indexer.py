@@ -44,7 +44,7 @@ class Indexer(BaseIndexer):
 		http://stackoverflow.com/questions/1145905/scanning-huge-tables-with-sqlalchemy-using-the-orm
 		"""
 
-		total = model.session.query(func.count(model.id)).filter(where).scalar()
+		total = model.session.query(sqlalchemy.func.count(model.id)).filter(where).scalar()
 		self.index_total = min(total, limit) if limit not in [None, 0] else total
 		vprint('Number of elements to index: ' + str(self.index_total))
 
