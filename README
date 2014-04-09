@@ -1,0 +1,4 @@
+TODO
+capture SIGUSR1 or SIGUSR2 and print actual indexing status.
+run using multiprocessing module (http://stackoverflow.com/questions/4496680/python-threads-all-executing-on-a-single-core)
+
